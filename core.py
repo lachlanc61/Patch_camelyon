@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os,datetime, time, gc
 import sys
 
 import tensorflow as tf
@@ -8,12 +7,7 @@ from tensorflow import keras
 import tensorflow_datasets as tfds
 
 from keras import Sequential 
-from keras import layers
-from keras import optimizers
-from keras import regularizers
 
-import config
-import src.utils as utils
 
 
 """
@@ -47,7 +41,6 @@ def normalise(img, labels):
 #INITIALISE
 #-----------------------------------
 
-starttime = time.time()  #init timer
 print(f'python version: {sys.version}')
 print(f'tensorflow version: {tf.__version__}')
 
@@ -177,13 +170,13 @@ if POSTPLOT:
   fig.tight_layout(pad=2)
 
   epochs = range(1, len(tacc) + 1)
-  ax[0].plot(epochs, tacc, 'r', label='Training')
-  ax[0].plot(epochs, vacc, 'b', label='Validation')
+  ax[0].plot(epochs, tacc, 'r', label='Training accuracy')
+  ax[0].plot(epochs, vacc, 'b', label='Validation accuracy')
   ax[0].set_title('Accuracy')
   ax[0].legend()
 
-  ax[1].plot(epochs, tloss, 'r', label='Training')
-  ax[1].plot(epochs, vloss, 'b', label='Validation')
+  ax[1].plot(epochs, tloss, 'r', label='Training loss')
+  ax[1].plot(epochs, vloss, 'b', label='Validation loss')
   ax[1].set_title('Loss')
   ax[1].legend()
 
