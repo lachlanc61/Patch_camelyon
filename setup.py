@@ -14,8 +14,9 @@ setup(
     description='project description here',
     long_description=readme,
     author='Lachlan Casey',
+    author='Bill Close',
     author_email='lachlanc.612@gmail.com',
-    url='https://github.com/lachlanc61/STEMPLATE',
+    url='https://github.com/lachlanc61/Patch_camelyon',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
 )
