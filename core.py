@@ -20,19 +20,37 @@ import src.utils as utils
 Project description here
 
 """
+#-----------------------------------
+#VARIABLES
+#-----------------------------------
+
+batchlen = 128
+buffer=5000
 
 #-----------------------------------
-#CLASSES
+#FUNCTIONS
 #-----------------------------------
+
+def normalise(img, labels):
+  """
+  simple normaliser to pass to tfds.map
+    scales 0-255 to 0-1
+    receives tensor tuple, returns same 
+  """
+  img = tf.cast(img, tf.float32)
+  img = img/255.
+  return img, labels
 
 #-----------------------------------
 #INITIALISE
 #-----------------------------------
 
 starttime = time.time()             #init timer
-print(sys.version)
-gpu_available = (len(tf.config.list_physical_devices('GPU')) > 0)
+print(f'python version: {sys.version}')
+print(f'tensorflow version: {tf.__version__}')
 
+gpu_available = (len(tf.config.list_physical_devices('GPU')) > 0)
+print(f'GPU: {gpu_available}')
 #-----------------------------------
 #MAIN START
 #-----------------------------------
@@ -45,24 +63,46 @@ print("---------------")
 data, info = tfds.load('patch_camelyon', with_info = True, as_supervised = True)
 
 dtrain = data['train']
-dvalid = data['validation']
+dvalidation = data['validation']
 dtest = data['test']
 
+#normalise all to range(0,1) - speeds up ML calc
+# tfds.map performs (function) on each element of the array
+dtrain = dtrain.map(normalise)
+dvalidation = dvalidation.map(normalise)
+dtest = dtest.map(normalise)
+
+#shuffle the training data to use a different set each time
+dtrain=dtrain.shuffle(buffer)
+
+#get a sub-batch for training
+dtrain = dtrain.batch(batchlen) 
+dvalidation = dvalidation.batch(batchlen) 
+dtest = dtest.batch(batchlen) 
+
+#extract tensor elements
+#   iter converts to iterable object
+#   next extracts element from each
+#   comes as (image, label) tuple
+
 timg, tlabels = next(iter(dtrain))
-vimg, vlabels = next(iter(dvalid))
+vimg, vlabels = next(iter(dvalidation))
 
-#Checking the label shape
-print("labelshape",vlabels.shape)
+#check shapes for both
+#should correspond to batch size
+print("labelshape:",vlabels.shape)
+print("imgshape:",timg.shape)
+print("batch size:",batchlen)
 
-#Checking the image shape
-print("imgshape",timg.shape)
-
-
-fig, ax = plt.subplots(1,3, figsize=(12,4))
+#plot 12 random images as RGB, including label as true/false 
+fig, ax = plt.subplots(2,6, figsize=(12,5))
 fig.tight_layout(pad=0.1)
 
-for i in np.arange(3):
-    ax[i].imshow(timg[:,:,i])
+for i,ax in enumerate(ax.flat):
+    rand = np.random.randint(batchlen)    
+    ax.imshow(timg[rand,:,:,:])
+    ax.set_title(bool(tlabels.numpy()[rand]))
+    ax.set_axis_off()
 
 plt.show()
 #open the data 

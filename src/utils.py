@@ -2,17 +2,11 @@ import time
 import os
 
 import config
-import localconf
 
 def startup():
   """
   initialisation routine
   """
-
-  if config.LOCALDAT == True:   
-      wdirname=config.ddirname   
-  else:
-      wdirname=localconf.extdirname
 
   #initialise directories relative to script
   scriptdir = os.path.realpath(__file__)    #_file = current script
