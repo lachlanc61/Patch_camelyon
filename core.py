@@ -12,6 +12,13 @@ from keras import Sequential
 """
 Practice project - histology
 
+3 layers 256 128, batch 512 - 0.6 vacc
+4 layers 256 128, batch 512 - 0.63 vacc
+4 layers 256 128 back 8k  - 0.65 vacc - v slow
+
+
+
+
 """
 #-----------------------------------
 #VARIABLES
@@ -19,7 +26,7 @@ Practice project - histology
 PREPLOT=False     #plot some images before running model
 POSTPLOT=True     #plot accuracy and loss over time
 
-batchlen = 256    #size of batch for fitting
+batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
 
 #-----------------------------------
@@ -125,24 +132,6 @@ model = Sequential(
 
 #view model summary
 model.summary()
-
-"""
-#print parameters
-L1_num_params = 400 * 25 + 25  # W1 parameters  + b1 parameters
-L2_num_params = 25 * 15 + 15   # W2 parameters  + b2 parameters
-L3_num_params = 15 * 1 + 1     # W3 parameters  + b3 parameters
-print("L1 params = ", L1_num_params, ", L2 params = ", L2_num_params, ",  L3 params = ", L3_num_params )
-
-[layer0, layer1, layer2, layer3, layer4] = model.layers
-
-#### Examine Weights & shapes
-W1,b1 = layer1.get_weights()
-W2,b2 = layer2.get_weights()
-W3,b3 = layer3.get_weights()
-print(f"W1 shape = {W1.shape}, b1 shape = {b1.shape}")
-print(f"W2 shape = {W2.shape}, b2 shape = {b2.shape}")
-print(f"W3 shape = {W3.shape}, b3 shape = {b3.shape}")
-"""
 
 #compile the model
 #   acc = track accuracy vs train/val sets
