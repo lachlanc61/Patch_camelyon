@@ -9,7 +9,6 @@ import tensorflow_datasets as tfds
 from keras import Sequential 
 
 
-
 """
 Practice project - histology
 
