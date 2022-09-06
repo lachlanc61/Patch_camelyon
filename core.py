@@ -23,12 +23,14 @@ Practice project - histology
 #-----------------------------------
 #VARIABLES
 #-----------------------------------
-PREPLOT=False     #plot some images before running model
-POSTPLOT=True     #plot accuracy and loss over time
+PREPLOT=False       #plot some images before running model
+POSTPLOT=True       #plot accuracy and loss over time
+LAYEROUTPLOT=False  #plot layer outputs - not working yet
 
 batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
-
+nepochs=100       #no. epochs
+stoplim=20      #patience for early stop
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -117,8 +119,6 @@ if PREPLOT:
 model = Sequential(
     [
         keras.layers.Flatten(input_shape=(96, 96, 3)),
- #      tf.keras.Input(shape=(96,96,3)),    #specify input size
-        ### START CODE HERE ### 
         keras.layers.Dense(256, activation='relu'),
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(56, activation='relu'),
@@ -127,7 +127,6 @@ model = Sequential(
         ### END CODE HERE ### 
     ], name = "my_model" 
 )   
-
 
 
 #view model summary
@@ -143,14 +142,14 @@ model.compile(
 
 # add a callback to stop refinement early if train loss stops improving
 #   maybe better to do this on val? not sure
-stopcond=keras.callbacks.EarlyStopping(monitor='acc', patience=20)
+stopcond=keras.callbacks.EarlyStopping(monitor='loss', patience=stoplim)
 
 #run the fit, saving params to fitlog 
 #   epochs = N. cycles
 #   validation data is tested each epoch
 fitlog = model.fit(
     timg,tlabels,
-    epochs=200,
+    epochs=nepochs,
     validation_data = (vimg, vlabels),
     callbacks=[stopcond],
     verbose=1
@@ -164,6 +163,7 @@ vloss = fitlog.history['val_loss']
 
 #evaluate model against reserved test data
 eval = model.evaluate(testimg, testlabels)
+
 
 print(
   "EVAL\n"
@@ -187,6 +187,23 @@ if POSTPLOT:
   ax[1].set_title('Loss')
   ax[1].legend()
 
+  plt.show()
+
+
+if LAYEROUTPLOT:
+  """
+  attempting to get layer outputs - not sure what i'm looking at yet
+  https://stackoverflow.com/questions/41711190/keras-how-to-get-the-output-of-each-layer
+  https://stackoverflow.com/questions/63287641/get-each-layer-output-in-keras-model-for-a-single-image
+  """
+  extractor = keras.Model(inputs=model.inputs,
+                          outputs=[layer.output for layer in model.layers])
+  features = extractor(timg)
+  print(features[1])
+  print(features[1].shape[0])
+  print(features[1].shape[1])
+
+  plt.imshow(features[2])
   plt.show()
 
 print("CLEAN EXIT")
