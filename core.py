@@ -100,28 +100,40 @@ if PREPLOT:
 
 #Initialise basic TF model
 #   flatten RGB images as first layer
+#
+#   use relu function instead of signmoid for all but output layer
+#   basically max(0,val)
+#   = passthrough if above 0
+#     more responsive across entire range
+#     sigmoid only really sensitive around inflection point. high always ->1, low always->0
+#   add two more layers
 model = Sequential(
     [
         keras.layers.Flatten(input_shape=(96, 96, 3)),
  #      tf.keras.Input(shape=(96,96,3)),    #specify input size
         ### START CODE HERE ### 
-        keras.layers.Dense(25, activation='sigmoid'),
-        keras.layers.Dense(15, activation='sigmoid'), 
+        keras.layers.Dense(256, activation='relu'),
+        keras.layers.Dense(128, activation='relu'),
+        keras.layers.Dense(56, activation='relu'),
+        keras.layers.Dense(12, activation='relu'), 
         keras.layers.Dense(1, activation='sigmoid') 
         ### END CODE HERE ### 
     ], name = "my_model" 
 )   
 
+
+
 #view model summary
 model.summary()
 
+"""
 #print parameters
 L1_num_params = 400 * 25 + 25  # W1 parameters  + b1 parameters
 L2_num_params = 25 * 15 + 15   # W2 parameters  + b2 parameters
 L3_num_params = 15 * 1 + 1     # W3 parameters  + b3 parameters
 print("L1 params = ", L1_num_params, ", L2 params = ", L2_num_params, ",  L3 params = ", L3_num_params )
 
-[layer0, layer1, layer2, layer3] = model.layers
+[layer0, layer1, layer2, layer3, layer4] = model.layers
 
 #### Examine Weights & shapes
 W1,b1 = layer1.get_weights()
@@ -130,22 +142,29 @@ W3,b3 = layer3.get_weights()
 print(f"W1 shape = {W1.shape}, b1 shape = {b1.shape}")
 print(f"W2 shape = {W2.shape}, b2 shape = {b2.shape}")
 print(f"W3 shape = {W3.shape}, b3 shape = {b3.shape}")
+"""
 
 #compile the model
 #   acc = track accuracy vs train/val sets
 model.compile(
     loss=tf.keras.losses.BinaryCrossentropy(),
-    optimizer=tf.keras.optimizers.Adam(0.001),
+    optimizer=tf.keras.optimizers.Adam(0.0005),
     metrics=['acc'],
 )
+
+# add a callback to stop refinement early if train loss stops improving
+#   maybe better to do this on val? not sure
+stopcond=keras.callbacks.EarlyStopping(monitor='acc', patience=20)
 
 #run the fit, saving params to fitlog 
 #   epochs = N. cycles
 #   validation data is tested each epoch
 fitlog = model.fit(
     timg,tlabels,
-    epochs=50,
-    validation_data = (vimg, vlabels), verbose=1
+    epochs=200,
+    validation_data = (vimg, vlabels),
+    callbacks=[stopcond],
+    verbose=1
 )
 
 #extract metrics for plotting
