@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys 
+import os
 
 import tensorflow as tf
 from tensorflow import keras
@@ -20,7 +21,11 @@ PREPLOT=False       #plot some images before running model
 POSTPLOT=True       #plot accuracy and loss over time
 LAYEROUTPLOT=False  #plot layer outputs - not working yet
 
-batchlen = 512    #size of batch for fitting
+#workdir and inputfile
+wdirname='train'     #working directory relative to script
+odirname='out'      #output directory relative to script
+
+batchlen = 256    #size of batch for fitting
 buffer=5000       #buffer for shuffling
 nepochs=100       #no. epochs
 stoplim=25      #patience for early stop
@@ -49,6 +54,24 @@ print(f'tensorflow version: {tf.__version__}')
 
 gpu_available = (len(tf.config.list_physical_devices('GPU')) > 0)
 print(f'GPU: {gpu_available}')
+
+
+#initialise directories relative to script
+script = os.path.realpath(__file__) #_file = current script
+spath=os.path.dirname(script) 
+wdir=os.path.join(spath,wdirname)
+odir=os.path.join(spath,odirname)
+
+checkpoint_path = os.path.join(wdir,"cp-{epoch:04d}.ckpt")
+checkpoint_dir = os.path.dirname(checkpoint_path)
+
+print("script path:", spath)
+print("working path:", wdir)
+print("output path:", odir)
+print("cp:", checkpoint_path)
+print("cp:", checkpoint_dir)
+print("---------------")
+
 
 #-----------------------------------
 #MAIN START
@@ -102,6 +125,7 @@ if PREPLOT:
 
   plt.show()
   exit()
+
 #we are overfitting pretty heavily, try regularisation
 l2reg=tf.keras.regularizers.L2(lamda)
 #kernel_regularizer=l2reg
@@ -132,7 +156,11 @@ MODEL HERE
 
 model = Sequential(
     [
-        keras.layers.Conv2D(32,3, activation='relu', input_shape=[96, 96, 3]),
+        keras.layers.Conv2D(256,3, padding='same', activation='relu', input_shape=[96, 96, 3]),
+        keras.layers.MaxPooling2D(2),
+        keras.layers.Conv2D(1024,3, padding='same', activation='relu'),
+        keras.layers.MaxPooling2D(2),
+        keras.layers.Conv2D(256,3, padding='same', activation='relu'),
         keras.layers.MaxPooling2D(2),
         keras.layers.Flatten(),
         keras.layers.Dense(256, activation='relu'),
@@ -155,9 +183,22 @@ model.compile(
     metrics=['acc'],
 )
 
-# add a callback to stop refinement early if train loss stops improving
-#   maybe better to do this on val? not sure
+
+#Callbacks
+#   (special utilities executed during training)
+# https://blog.paperspace.com/tensorflow-callbacks/
+
+#stop refinement early if val stops improving
 stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=stoplim)
+
+
+batch_size=32
+
+#save model during training every 5 batches
+cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                 save_weights_only=True,
+                                                 verbose=1,
+                                                 save_freq=1*batch_size)
 
 #run the fit, saving params to fitlog 
 #   epochs = N. cycles
@@ -166,7 +207,8 @@ fitlog = model.fit(
     timg,tlabels,
     epochs=nepochs,
     validation_data = (vimg, vlabels),
-    callbacks=[stopcond],
+    callbacks=[stopcond,cp_callback],
+    batch_size=batch_size,
     verbose=1
 )
 
@@ -215,8 +257,9 @@ if LAYEROUTPLOT:
                           outputs=[layer.output for layer in model.layers])
   features = extractor(timg)
 
-  #extract layer outputs as a huge matrix
-  for i in np.arange(8):
+  #print(features[1])
+
+  for i in np.arange(len(model.layers)):
     print(i,features[i].shape)
 
  # print(features[1])
