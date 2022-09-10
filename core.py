@@ -118,6 +118,7 @@ l2reg=tf.keras.regularizers.L2(lamda)
 model = Sequential(
     [
         keras.layers.Conv2D(32,4, activation='relu', input_shape=[96, 96, 3]),
+        keras.layers.MaxPooling2D(2),
         keras.layers.Flatten(),
        # keras.layers.Flatten(input_shape=(96, 96, 3)),
         keras.layers.Dense(256, activation='relu'),
@@ -227,12 +228,16 @@ try L2_regularisation on all layers
   - much slower (1.2 sec), still 0.7-0.75 vacc
   - maybe more stable but seems not worth
 
-Ok here's an example
-https://medium.com/analytics-vidhya/deep-learning-tutorial-patch-camelyon-data-set-d0da9034550e
-  6 conv2D layers + 6 "maxpool" layers - what is this?
-  3 dense layers
-  gets ~0.75, 150ms/step
+    Ok here's an example
+    https://medium.com/analytics-vidhya/deep-learning-tutorial-patch-camelyon-data-set-d0da9034550e
+      6 conv2D layers + 6 "maxpool" layers - what is this?
+      3 dense layers
+      gets ~0.75, 150ms/step
 
+try adding this maxpool layer  - 0.72 vacc, more stable?
+  faster - 17ms/step
+  so what is this?
 
+  
 """
 
