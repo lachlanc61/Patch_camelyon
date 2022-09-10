@@ -12,17 +12,6 @@ from keras import Sequential
 """
 Practice project - histology
 
-3 layers 256 128, batch 512 - 0.6 vacc
-4 layers 256 128, batch 512 - 0.63 vacc
-4 layers 256 128 batch 8k  - 0.65 vacc - v slow
-
-4+1 batch 512               -   0.72 vacc
-  1 conv2D 32,3
-  4 dense 256,128,56,12 
-    4250 ms/step on CPU
-    ~27 ms/step on GPU
-
-
 """
 #-----------------------------------
 #VARIABLES
@@ -35,6 +24,8 @@ batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
 nepochs=100       #no. epochs
 stoplim=25      #patience for early stop
+
+lamda=0.0001
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -120,9 +111,13 @@ if PREPLOT:
 #     more responsive across entire range
 #     sigmoid only really sensitive around inflection point. high always ->1, low always->0
 #   add two more layers
+
+l2reg=tf.keras.regularizers.L2(lamda)
+#kernel_regularizer=l2reg
+
 model = Sequential(
     [
-        keras.layers.Conv2D(32,4, activation='relu', input_shape=[96, 96, 3], ),
+        keras.layers.Conv2D(32,4, activation='relu', input_shape=[96, 96, 3]),
         keras.layers.Flatten(),
        # keras.layers.Flatten(input_shape=(96, 96, 3)),
         keras.layers.Dense(256, activation='relu'),
@@ -214,3 +209,25 @@ if LAYEROUTPLOT:
 
 print("CLEAN EXIT")
 exit()
+
+
+
+"""
+performance log
+
+3 layers 256 128, batch 512 - 0.6 vacc
+4 layers 256 128, batch 512 - 0.63 vacc
+4 layers 256 128 batch 8k  - ~0.65 vacc - v slow
+
+4+1 batch 512               -   ~0.7 vacc
+  1 conv2D 32,3             - seems unstable, vacc varying 0.65-0.75
+  4 dense 256,128,56,12 
+    4250 ms/step on CPU
+    ~27 ms/step on GPU
+
+try L2_regularisation on all layers
+  - much slower (1.2 sec), still 0.7-0.75 vacc
+  - maybe more stable but seems not worth
+
+"""
+
