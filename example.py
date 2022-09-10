@@ -67,7 +67,7 @@ print(train_images.shape)
 
 
 """
-MODEL---------------------------------------------
+MODEL HERE
 """
 
 model = Sequential([
