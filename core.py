@@ -189,14 +189,26 @@ model.compile(
 # https://blog.paperspace.com/tensorflow-callbacks/
 
 #stop refinement early if val stops improving
+#https://towardsdatascience.com/a-practical-introduction-to-early-stopping-in-machine-learning-550ac88bc8fd
 stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=stoplim)
-
 
 batch_size=32
 
 #save model during training every 5 batches
+# save best model only based on val_loss
+
+#ok i am stumped on saving best model
+#   get warning "Can save best model only with val_acc available, skipping"
+#   looks like val_acc not making it into model.metrics somehow
+
+#BUT val_loss works for early stoping callback. both are available in history
+#I guess just save every 5 for now.... creates a pile of checkpoints, 
+#       will miss very best one unless save every epoch
+
 cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                  save_weights_only=True,
+                                               #  save_best_only=True,
+                                                 monitor='val_acc',
                                                  verbose=1,
                                                  save_freq=1*batch_size)
 
@@ -207,10 +219,17 @@ fitlog = model.fit(
     timg,tlabels,
     epochs=nepochs,
     validation_data = (vimg, vlabels),
+    validation_freq = 1,
     callbacks=[stopcond,cp_callback],
     batch_size=batch_size,
     verbose=1
 )
+
+print(model.metrics_names)
+
+#demonstrating val_acc is present
+for key in fitlog.history:
+  print(key)
 
 #extract metrics for plotting
 tacc = fitlog.history['acc']
