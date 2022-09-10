@@ -162,8 +162,6 @@ tloss = fitlog.history['loss']
 vacc = fitlog.history['val_acc']
 vloss = fitlog.history['val_loss']
 
-
-
 #  calc and print test result
 #   prefer not to see this till later
 if False:
@@ -228,6 +226,13 @@ performance log
 try L2_regularisation on all layers
   - much slower (1.2 sec), still 0.7-0.75 vacc
   - maybe more stable but seems not worth
+
+Ok here's an example
+https://medium.com/analytics-vidhya/deep-learning-tutorial-patch-camelyon-data-set-d0da9034550e
+  6 conv2D layers + 6 "maxpool" layers - what is this?
+  3 dense layers
+  gets ~0.75, 150ms/step
+
 
 """
 
