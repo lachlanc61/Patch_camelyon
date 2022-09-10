@@ -17,13 +17,20 @@ Practice project - histology
 #-----------------------------------
 #VARIABLES
 #-----------------------------------
+DOTRAIN=False       #train model from scratch
 PREPLOT=False       #plot some images before running model
-POSTPLOT=True       #plot accuracy and loss over time
+POSTPLOT=True       #plot accuracy and loss over time, only used if training
 LAYEROUTPLOT=False  #plot layer outputs - not working yet
+
+
 
 #workdir and inputfile
 wdirname='train'     #working directory relative to script
 odirname='out'      #output directory relative to script
+
+cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220910_vacc77/cp-0044.ckpt'
+             #location of checkpoint to pre-load 
+             #manually set for now
 
 batchlen = 256    #size of batch for fitting
 buffer=5000       #buffer for shuffling
@@ -212,30 +219,72 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                  verbose=1,
                                                  save_freq=1*batch_size)
 
-#run the fit, saving params to fitlog 
-#   epochs = N. cycles
-#   validation data is tested each epoch
-fitlog = model.fit(
-    timg,tlabels,
-    epochs=nepochs,
-    validation_data = (vimg, vlabels),
-    validation_freq = 1,
-    callbacks=[stopcond,cp_callback],
-    batch_size=batch_size,
-    verbose=1
-)
 
-print(model.metrics_names)
+#TRAIN/LOAD
 
-#demonstrating val_acc is present
-for key in fitlog.history:
-  print(key)
+#if training, do it
+#else load model from checkpoint variable (manually set)
 
-#extract metrics for plotting
-tacc = fitlog.history['acc']
-tloss = fitlog.history['loss']
-vacc = fitlog.history['val_acc']
-vloss = fitlog.history['val_loss']
+if DOTRAIN:
+  #run the fit, saving params to fitlog 
+  #   epochs = N. cycles
+  #   validation data is tested each epoch
+  fitlog = model.fit(
+      timg,tlabels,
+      epochs=nepochs,
+      validation_data = (vimg, vlabels),
+      validation_freq = 1,
+      callbacks=[stopcond,cp_callback],
+      batch_size=batch_size,
+      verbose=1
+  )
+
+  print(model.metrics_names)
+
+  #demonstrating val_acc is present
+  for key in fitlog.history:
+    print(key)
+
+  #extract metrics for plotting
+  tacc = fitlog.history['acc']
+  tloss = fitlog.history['loss']
+  vacc = fitlog.history['val_acc']
+  vloss = fitlog.history['val_loss']
+
+
+  #plot fit progress against train and validation data
+  if POSTPLOT:
+    fig, ax = plt.subplots(1,2, figsize=(12,6))
+    fig.tight_layout(pad=2)
+
+    epochs = range(1, len(tacc) + 1)
+    ax[0].plot(epochs, tacc, 'r', label='Training accuracy')
+    ax[0].plot(epochs, vacc, 'b', label='Validation accuracy')
+    ax[0].set_title('Accuracy')
+    ax[0].legend()
+
+    ax[1].plot(epochs, tloss, 'r', label='Training loss')
+    ax[1].plot(epochs, vloss, 'b', label='Validation loss')
+    ax[1].set_title('Loss')
+    ax[1].legend()
+
+    plt.show()
+
+else:
+  #load from checkpoint variable
+  model.load_weights(cptoload)
+  tloss, tacc = model.evaluate(timg, tlabels, verbose=2)
+  vloss, vacc = model.evaluate(vimg, vlabels, verbose=2)
+
+  print("MODEL LOAD SUCCESSFUL\n"
+  f'checkpoint: {cptoload}\n'
+  f'------------------------\n'
+  f'train loss: {tloss:>9.3f}\n'
+  f'train acc : {tacc:>9.3f}\n'
+  f'------------------------\n'
+  f'val loss  : {vloss:>9.3f}\n'
+  f'val acc   : {vacc:>9.3f}\n')
+  f'------------------------\n'
 
 #  calc and print test result
 #   prefer not to see this till later
@@ -244,24 +293,6 @@ if False:
   print("EVAL\n"
   f'test loss: {eval[0]}\n'
   f'test acc:  {eval[1]}\n')
-
-#plot fit progress against train and validation data
-if POSTPLOT:
-  fig, ax = plt.subplots(1,2, figsize=(12,6))
-  fig.tight_layout(pad=2)
-
-  epochs = range(1, len(tacc) + 1)
-  ax[0].plot(epochs, tacc, 'r', label='Training accuracy')
-  ax[0].plot(epochs, vacc, 'b', label='Validation accuracy')
-  ax[0].set_title('Accuracy')
-  ax[0].legend()
-
-  ax[1].plot(epochs, tloss, 'r', label='Training loss')
-  ax[1].plot(epochs, vloss, 'b', label='Validation loss')
-  ax[1].set_title('Loss')
-  ax[1].legend()
-
-  plt.show()
 
 
 if LAYEROUTPLOT:
@@ -321,6 +352,14 @@ try L2_regularisation on all layers
 
 try adding this maxpool layer  - 0.72 vacc, more stable?
   faster - 17ms/step
+
+
+up to three conv+maxpool layers
+  256 1024 256 
+  touches 0.77 but very slow to train
+
+
+
 
 
 """
