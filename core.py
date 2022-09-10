@@ -18,7 +18,7 @@ Practice project - histology
 #-----------------------------------
 PREPLOT=False       #plot some images before running model
 POSTPLOT=True       #plot accuracy and loss over time
-LAYEROUTPLOT=False  #plot layer outputs - not working yet
+LAYEROUTPLOT=True  #plot layer outputs - not working yet
 
 batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
@@ -102,18 +102,33 @@ if PREPLOT:
 
   plt.show()
 
-#Initialise basic TF model
-#   flatten RGB images as first layer
-#
-#   use relu function instead of signmoid for all but output layer
-#   basically max(0,val)
-#   = passthrough if above 0
-#     more responsive across entire range
-#     sigmoid only really sensitive around inflection point. high always ->1, low always->0
-#   add two more layers
-
+#we are overfitting pretty heavily, try regularisation
 l2reg=tf.keras.regularizers.L2(lamda)
 #kernel_regularizer=l2reg
+  #not great, slow and not a big improvement, leave it out for now
+
+
+"""
+MODEL HERE
+
+  convolution layer (Nfilters,Npx,...)
+    basically a set of N filters acting on a window of MxM px slid across whole image
+      output shape x,y,Nfilters
+  
+  max pooling layer (Npx)
+    sliding Npx x Npx window
+    outputs max value within window
+      effectively downsamples image retaining max
+      https://www.youtube.com/watch?v=ZjM_XQa5s6s
+
+  use relu function instead of signmoid for all but output layer
+  basically max(0,val)
+  = passthrough if above 0
+    more responsive across entire range compared to sigmoid
+
+"""
+
+#Initialise basic TF model
 
 model = Sequential(
     [
@@ -203,8 +218,8 @@ if LAYEROUTPLOT:
   print(features[1].shape[0])
   print(features[1].shape[1])
 
-  plt.imshow(features[2])
-  plt.show()
+  #plt.imshow(features[2])
+  #plt.show()
 
 print("CLEAN EXIT")
 exit()
@@ -236,8 +251,17 @@ try L2_regularisation on all layers
 
 try adding this maxpool layer  - 0.72 vacc, more stable?
   faster - 17ms/step
-  so what is this?
 
-  
+
 """
 
+"""
+resources
+
+really good explanation of maxpooling here
+https://www.youtube.com/watch?v=ZjM_XQa5s6s
+
+also nice CNN overview
+https://www.youtube.com/watch?v=YRhxdVk_sIs
+
+"""
