@@ -224,7 +224,6 @@ if LAYEROUTPLOT:
  # print(features[1])
   #plt.imshow(features[0,0,::,0])
   
-#  print(features[1])
 #  print(features[1].shape[0])
 #  print(features[1].shape[1])
 
