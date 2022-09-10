@@ -18,7 +18,7 @@ Practice project - histology
 #-----------------------------------
 PREPLOT=False       #plot some images before running model
 POSTPLOT=True       #plot accuracy and loss over time
-LAYEROUTPLOT=True  #plot layer outputs - not working yet
+LAYEROUTPLOT=False  #plot layer outputs - not working yet
 
 batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
@@ -211,15 +211,26 @@ if LAYEROUTPLOT:
   https://stackoverflow.com/questions/41711190/keras-how-to-get-the-output-of-each-layer
   https://stackoverflow.com/questions/63287641/get-each-layer-output-in-keras-model-for-a-single-image
   """
+
+  #extract layer outputs as a huge matrix
   extractor = keras.Model(inputs=model.inputs,
                           outputs=[layer.output for layer in model.layers])
   features = extractor(timg)
-  print(features[1])
-  print(features[1].shape[0])
-  print(features[1].shape[1])
 
-  #plt.imshow(features[2])
+  #extract layer outputs as a huge matrix
+  for i in np.arange(8):
+    print(i,features[i].shape)
+
+ # print(features[1])
+  #plt.imshow(features[0,0,::,0])
+  
+#  print(features[1])
+#  print(features[1].shape[0])
+#  print(features[1].shape[1])
+
+  #plt.imshow(features[4])
   #plt.show()
+  #
 
 print("CLEAN EXIT")
 exit()
