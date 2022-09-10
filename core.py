@@ -101,7 +101,7 @@ if PREPLOT:
       ax.set_axis_off()
 
   plt.show()
-
+  exit()
 #we are overfitting pretty heavily, try regularisation
 l2reg=tf.keras.regularizers.L2(lamda)
 #kernel_regularizer=l2reg
@@ -132,16 +132,14 @@ MODEL HERE
 
 model = Sequential(
     [
-        keras.layers.Conv2D(32,4, activation='relu', input_shape=[96, 96, 3]),
+        keras.layers.Conv2D(32,3, activation='relu', input_shape=[96, 96, 3]),
         keras.layers.MaxPooling2D(2),
         keras.layers.Flatten(),
-       # keras.layers.Flatten(input_shape=(96, 96, 3)),
         keras.layers.Dense(256, activation='relu'),
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(56, activation='relu'),
         keras.layers.Dense(12, activation='relu'), 
         keras.layers.Dense(1, activation='sigmoid') 
-        ### END CODE HERE ### 
     ], name = "my_model" 
 )   
 
