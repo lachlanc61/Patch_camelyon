@@ -25,7 +25,8 @@ LAYEROUTPLOT=False  #plot layer outputs - not working yet
 
 
 #workdir and inputfile
-wdirname='train'     #working directory relative to script
+# NB: both directories in gitignore - would need to create locally in clone
+wdirname='train'     #working directory relative to script    
 odirname='out'      #output directory relative to script
 
 cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220910_vacc77/cp-0044.ckpt'
