@@ -4,5 +4,6 @@ Practice project for histology
 tf dataset Patch_camelyon
     set of 96x96 RGB images 
 
-Aim to detect presence of metastatic tissue within patch
+Aim: detect presence of metastatic tissue within patch
+
 ---------------
