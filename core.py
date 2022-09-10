@@ -14,9 +14,13 @@ Practice project - histology
 
 3 layers 256 128, batch 512 - 0.6 vacc
 4 layers 256 128, batch 512 - 0.63 vacc
-4 layers 256 128 back 8k  - 0.65 vacc - v slow
+4 layers 256 128 batch 8k  - 0.65 vacc - v slow
 
-
+4+1 batch 512               -   0.72 vacc
+  1 conv2D 32,3
+  4 dense 256,128,56,12 
+    4250 ms/step on CPU
+    ~27 ms/step on GPU
 
 
 """
@@ -30,7 +34,7 @@ LAYEROUTPLOT=False  #plot layer outputs - not working yet
 batchlen = 512    #size of batch for fitting
 buffer=5000       #buffer for shuffling
 nepochs=100       #no. epochs
-stoplim=20      #patience for early stop
+stoplim=25      #patience for early stop
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -118,7 +122,9 @@ if PREPLOT:
 #   add two more layers
 model = Sequential(
     [
-        keras.layers.Flatten(input_shape=(96, 96, 3)),
+        keras.layers.Conv2D(32,4, activation='relu', input_shape=[96, 96, 3], ),
+        keras.layers.Flatten(),
+       # keras.layers.Flatten(input_shape=(96, 96, 3)),
         keras.layers.Dense(256, activation='relu'),
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(56, activation='relu'),
@@ -142,7 +148,7 @@ model.compile(
 
 # add a callback to stop refinement early if train loss stops improving
 #   maybe better to do this on val? not sure
-stopcond=keras.callbacks.EarlyStopping(monitor='loss', patience=stoplim)
+stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=stoplim)
 
 #run the fit, saving params to fitlog 
 #   epochs = N. cycles
@@ -161,15 +167,15 @@ tloss = fitlog.history['loss']
 vacc = fitlog.history['val_acc']
 vloss = fitlog.history['val_loss']
 
-#evaluate model against reserved test data
-eval = model.evaluate(testimg, testlabels)
 
 
-print(
-  "EVAL\n"
+#  calc and print test result
+#   prefer not to see this till later
+if False:
+  eval = model.evaluate(testimg, testlabels)
+  print("EVAL\n"
   f'test loss: {eval[0]}\n'
   f'test acc:  {eval[1]}\n')
-
 
 #plot fit progress against train and validation data
 if POSTPLOT:
