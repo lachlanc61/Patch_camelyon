@@ -2,6 +2,7 @@
 out
 data
 train
+examples
 
 # virtualenv
 .venv/
