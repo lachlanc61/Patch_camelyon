@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys 
 import os
+import gc
+import time 
 
 import tensorflow as tf
 from tensorflow import keras
@@ -20,7 +22,7 @@ Practice project - histology
 DOTRAIN=False       #train model from scratch
 PREPLOT=False       #plot some images before running model
 POSTPLOT=True       #plot accuracy and loss over time, only used if training
-LAYEROUTPLOT=False  #plot layer outputs - not working yet
+LAYEROUTPLOT=True  #plot layer outputs - not working yet
 
 
 
@@ -29,16 +31,18 @@ LAYEROUTPLOT=False  #plot layer outputs - not working yet
 wdirname='train'     #working directory relative to script    
 odirname='out'      #output directory relative to script
 
-cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220910_vacc77/cp-0044.ckpt'
+#cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220910_vacc77/cp-0044.ckpt'
+cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-0032.ckpt'
+
              #location of checkpoint to pre-load 
              #manually set for now
 
 batchlen = 256    #size of batch for fitting
 buffer=5000       #buffer for shuffling
 nepochs=100       #no. epochs
-stoplim=25      #patience for early stop
-
-lamda=0.0001
+stoplim=25        #patience for early stop
+batch_size=32     #size of batch for training
+lamda=0.0001      #regularisation param
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -56,6 +60,11 @@ def normalise(img, labels):
 #-----------------------------------
 #INITIALISE
 #-----------------------------------
+
+#if we're not training, hide GPU to avoid it going OOM when viewing layer outputs
+#   sure there must be a way to do this more cleanly
+if not DOTRAIN:
+  tf.config.set_visible_devices([], 'GPU')
 
 print(f'python version: {sys.version}')
 print(f'tensorflow version: {tf.__version__}')
@@ -164,6 +173,25 @@ MODEL HERE
 
 model = Sequential(
     [
+        keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
+        keras.layers.MaxPooling2D(2, name="block1_pool"),
+        keras.layers.Conv2D(32,3, padding='same', activation='relu', name="block2_conv1"),
+        keras.layers.MaxPooling2D(2, name="block2_pool"),
+        keras.layers.Conv2D(16,3, padding='same', activation='relu', name="block3_conv1"),
+        keras.layers.MaxPooling2D(2, name="block3_pool"),
+        keras.layers.Flatten(),
+        keras.layers.Dense(256, activation='relu', name="dense1"),
+        keras.layers.Dense(128, activation='relu', name="dense2"),
+        keras.layers.Dense(56, activation='relu', name="dense3"),
+        keras.layers.Dense(12, activation='relu', name="dense4"), 
+        keras.layers.Dense(1, activation='sigmoid', name="predictions") 
+    ], name = "my_model" 
+)   
+
+
+"""
+model = Sequential(
+    [
         keras.layers.Conv2D(256,3, padding='same', activation='relu', input_shape=[96, 96, 3]),
         keras.layers.MaxPooling2D(2),
         keras.layers.Conv2D(1024,3, padding='same', activation='relu'),
@@ -178,6 +206,7 @@ model = Sequential(
         keras.layers.Dense(1, activation='sigmoid') 
     ], name = "my_model" 
 )   
+"""
 
 
 #view model summary
@@ -200,7 +229,6 @@ model.compile(
 #https://towardsdatascience.com/a-practical-introduction-to-early-stopping-in-machine-learning-550ac88bc8fd
 stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=stoplim)
 
-batch_size=32
 
 #save model during training every 5 batches
 # save best model only based on val_loss
@@ -271,7 +299,7 @@ if DOTRAIN:
 
     plt.show()
 
-else:
+else: #if not training
   #load from checkpoint variable
   model.load_weights(cptoload)
   tloss, tacc = model.evaluate(timg, tlabels, verbose=2)
@@ -298,30 +326,58 @@ if False:
 
 if LAYEROUTPLOT:
   """
-  attempting to get layer outputs - not sure what i'm looking at yet
+  get layer outputs
   https://stackoverflow.com/questions/41711190/keras-how-to-get-the-output-of-each-layer
   https://stackoverflow.com/questions/63287641/get-each-layer-output-in-keras-model-for-a-single-image
+  
+  
+  https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/
+  ^ this one
   """
 
-  #extract layer outputs as a huge matrix
+  #extract layer outputs
   extractor = keras.Model(inputs=model.inputs,
                           outputs=[layer.output for layer in model.layers])
-  features = extractor(timg)
+  #features = extractor(timg)
 
-  #print(features[1])
+  #plot 1 random images as RGB, including label as true/false 
+  fig, ax = plt.subplot_mosaic("AABCD;AAEFG;HIJKL;MNOPQ", figsize=(16,12))
+  fig.tight_layout(pad=1)
 
-  for i in np.arange(len(model.layers)):
-    print(i,features[i].shape)
+  rand = np.random.randint(batchlen)   
 
- # print(features[1])
-  #plt.imshow(features[0,0,::,0])
-  
-#  print(features[1].shape[0])
-#  print(features[1].shape[1])
+  img=timg[rand,:,:,:]
+  # expand dimensions so that it represents a single 'sample'
+  eimg = np.expand_dims(img, axis=0)
 
-  #plt.imshow(features[4])
-  #plt.show()
-  #
+  print(eimg.shape)
+
+  feature_maps = extractor.predict(eimg)
+
+  ax["A"].imshow(img)
+  ax["A"].set_title(bool(tlabels.numpy()[rand]))
+  ax["A"].set_axis_off()
+
+  j=0 #layertoview
+  for layer in model.layers:
+    # check for convolutional layer
+    if ('conv' not in layer.name) and ('pool' not in layer.name):
+      j+=1
+      continue
+
+    i=0
+    for key in ax:
+      if key == "A":
+        print(layer.name)
+        print(j)
+      else:
+        #print(feature_maps[j][0][:,:,i])
+        ax[key].imshow(feature_maps[j][0][:,:,i])
+      #  ax[key].set_title(bool(tlabels.numpy()[rand]))
+        ax[key].set_axis_off()
+        i+=1
+    plt.savefig(os.path.join(odir, f'{layer.name}.png'), dpi=300)
+    j+=1
 
 print("CLEAN EXIT")
 exit()
