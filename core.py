@@ -19,11 +19,10 @@ Practice project - histology
 #-----------------------------------
 #VARIABLES
 #-----------------------------------
-DOTRAIN=False       #train model from scratch
+DOTRAIN=True       #train model from scratch
 PREPLOT=False       #plot some images before running model
 POSTPLOT=True       #plot accuracy and loss over time, only used if training
 LAYEROUTPLOT=True  #plot layer outputs - not working yet
-
 
 
 #workdir and inputfile
@@ -170,7 +169,9 @@ MODEL HERE
 """
 
 #Initialise basic TF model
-
+"""
+Simpler, faster model for testing, still gets 0.7-0.75 most of the time
+"""
 model = Sequential(
     [
         keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
@@ -190,6 +191,7 @@ model = Sequential(
 
 
 """
+gets ~0.75 fairly consistently - slow, large
 model = Sequential(
     [
         keras.layers.Conv2D(256,3, padding='same', activation='relu', input_shape=[96, 96, 3]),
@@ -326,56 +328,67 @@ if False:
 
 if LAYEROUTPLOT:
   """
-  get layer outputs
-  https://stackoverflow.com/questions/41711190/keras-how-to-get-the-output-of-each-layer
-  https://stackoverflow.com/questions/63287641/get-each-layer-output-in-keras-model-for-a-single-image
-  
-  
   https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/
-  ^ this one
+  save outputs of first 16 filters 
+    for all conv/pool layers
+    for one random image
   """
 
   #extract layer outputs
   extractor = keras.Model(inputs=model.inputs,
                           outputs=[layer.output for layer in model.layers])
-  #features = extractor(timg)
 
-  #plot 1 random images as RGB, including label as true/false 
+  #pick a random image
+  rand = np.random.randint(batchlen)   
+  img=timg[rand,:,:,:]
+
+  # expand dimensions so that it represents a single 'sample'
+  eimg = np.expand_dims(img, axis=0)
+  print(eimg.shape)
+
+  #extract feature maps from expanded image
+  feature_maps = extractor.predict(eimg)
+
+  #initialise the plots (using mosaic)
   fig, ax = plt.subplot_mosaic("AABCD;AAEFG;HIJKL;MNOPQ", figsize=(16,12))
   fig.tight_layout(pad=1)
 
-  rand = np.random.randint(batchlen)   
-
-  img=timg[rand,:,:,:]
-  # expand dimensions so that it represents a single 'sample'
-  eimg = np.expand_dims(img, axis=0)
-
-  print(eimg.shape)
-
-  feature_maps = extractor.predict(eimg)
-
+  #plot original as RGB, including label as true/false 
   ax["A"].imshow(img)
   ax["A"].set_title(bool(tlabels.numpy()[rand]))
   ax["A"].set_axis_off()
 
-  j=0 #layertoview
+  #iterate through layers, plotting first 16 filter outputs for each
+  #save to new file
+  #leave original image in place for all
+
+  j=0 #layer index
   for layer in model.layers:
-    # check for convolutional layer
+    # skip if not convolutional/pool layer
     if ('conv' not in layer.name) and ('pool' not in layer.name):
-      j+=1
+      j+=1    #still increment layer index
       continue
 
-    i=0
+    #iterate through first 16 filters
+    #   should probably randomise this in future
+    i=0   #filter index
+
+    #iterate through mosaic dict for axes
     for key in ax:
+      #if looking at original image axis, print the layer and skip
       if key == "A":
         print(layer.name)
         print(j)
       else:
-        #print(feature_maps[j][0][:,:,i])
+        #plot the feature map
+        # indexing/slicing is weird here, don't fully understand these objects
+        #   [layer][image=0][x,y,filter]
+        #   not sure why it has this format
         ax[key].imshow(feature_maps[j][0][:,:,i])
-      #  ax[key].set_title(bool(tlabels.numpy()[rand]))
         ax[key].set_axis_off()
         i+=1
+
+    #save the figure for each layer
     plt.savefig(os.path.join(odir, f'{layer.name}.png'), dpi=300)
     j+=1
 
