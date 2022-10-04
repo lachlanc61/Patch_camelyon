@@ -1,47 +1,26 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import sys 
 import os
-import gc
-import time 
+import numpy as np
+import matplotlib.pyplot as plt
 
 import tensorflow as tf
-from tensorflow import keras
 import tensorflow_datasets as tfds
 
+from tensorflow import keras
 from keras import Sequential 
 
+import src.utils as utils
 
 """
 Practice project - histology
 
 """
 #-----------------------------------
-#VARIABLES
+#Vars
 #-----------------------------------
-DOTRAIN=True       #train model from scratch
-PREPLOT=False       #plot some images before running model
-POSTPLOT=True       #plot accuracy and loss over time, only used if training
-LAYEROUTPLOT=True  #plot layer outputs - not working yet
 
+cfgloc='config.yaml'
 
-#workdir and inputfile
-# NB: both directories in gitignore - would need to create locally in clone
-wdirname='train'     #working directory relative to script    
-odirname='out'      #output directory relative to script
-
-#cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220910_vacc77/cp-0044.ckpt'
-cptoload='/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-0032.ckpt'
-
-             #location of checkpoint to pre-load 
-             #manually set for now
-
-batchlen = 256    #size of batch for fitting
-buffer=5000       #buffer for shuffling
-nepochs=100       #no. epochs
-stoplim=25        #patience for early stop
-batch_size=32     #size of batch for training
-lamda=0.0001      #regularisation param
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -60,9 +39,14 @@ def normalise(img, labels):
 #INITIALISE
 #-----------------------------------
 
+config=utils.readcfg(cfgloc)
+wdirname=config['wdirname']
+odirname=config['odirname']
+batchlen=config['batchlen']
+
 #if we're not training, hide GPU to avoid it going OOM when viewing layer outputs
 #   sure there must be a way to do this more cleanly
-if not DOTRAIN:
+if not config['DOTRAIN']:
   tf.config.set_visible_devices([], 'GPU')
 
 print(f'python version: {sys.version}')
@@ -107,7 +91,7 @@ dvalidation = dvalidation.map(normalise)
 dtest = dtest.map(normalise)
 
 #shuffle the training data to use a different set each time
-dtrain=dtrain.shuffle(buffer)
+dtrain=dtrain.shuffle(config['buffer'])
 
 #get a sub-batch for training
 dtrain = dtrain.batch(batchlen) 
@@ -128,7 +112,7 @@ testimg, testlabels  = next(iter(dtest))
 print("labelshape:",vlabels.shape)
 print("imgshape:",timg.shape)
 print("batch size:",batchlen)
-if PREPLOT:
+if config['PREPLOT']:
   #plot 12 random images as RGB, including label as true/false 
   fig, ax = plt.subplots(2,6, figsize=(12,5))
   fig.tight_layout(pad=0.1)
@@ -143,7 +127,7 @@ if PREPLOT:
   exit()
 
 #we are overfitting pretty heavily, try regularisation
-l2reg=tf.keras.regularizers.L2(lamda)
+l2reg=tf.keras.regularizers.L2(config['lamda'])
 #kernel_regularizer=l2reg
   #not great, slow and not a big improvement, leave it out for now
 
@@ -229,7 +213,7 @@ model.compile(
 
 #stop refinement early if val stops improving
 #https://towardsdatascience.com/a-practical-introduction-to-early-stopping-in-machine-learning-550ac88bc8fd
-stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=stoplim)
+stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=config['stoplim'])
 
 
 #save model during training every 5 batches
@@ -248,7 +232,7 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                #  save_best_only=True,
                                                  monitor='val_acc',
                                                  verbose=1,
-                                                 save_freq=1*batch_size)
+                                                 save_freq=1*config['batch_size'])
 
 
 #TRAIN/LOAD
@@ -256,17 +240,17 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
 #if training, do it
 #else load model from checkpoint variable (manually set)
 
-if DOTRAIN:
+if config['DOTRAIN']:
   #run the fit, saving params to fitlog 
   #   epochs = N. cycles
   #   validation data is tested each epoch
   fitlog = model.fit(
       timg,tlabels,
-      epochs=nepochs,
+      epochs=config['nepochs'],
       validation_data = (vimg, vlabels),
       validation_freq = 1,
       callbacks=[stopcond,cp_callback],
-      batch_size=batch_size,
+      batch_size=config['batch_size'],
       verbose=1
   )
 
@@ -284,7 +268,7 @@ if DOTRAIN:
 
 
   #plot fit progress against train and validation data
-  if POSTPLOT:
+  if config['POSTPLOT']:
     fig, ax = plt.subplots(1,2, figsize=(12,6))
     fig.tight_layout(pad=2)
 
@@ -303,12 +287,12 @@ if DOTRAIN:
 
 else: #if not training
   #load from checkpoint variable
-  model.load_weights(cptoload)
+  model.load_weights(config['cptoload'])
   tloss, tacc = model.evaluate(timg, tlabels, verbose=2)
   vloss, vacc = model.evaluate(vimg, vlabels, verbose=2)
 
   print("MODEL LOAD SUCCESSFUL\n"
-  f'checkpoint: {cptoload}\n'
+  f'checkpoint: {config["cptoload"]}\n'
   f'------------------------\n'
   f'train loss: {tloss:>9.3f}\n'
   f'train acc : {tacc:>9.3f}\n'
@@ -326,7 +310,7 @@ if False:
   f'test acc:  {eval[1]}\n')
 
 
-if LAYEROUTPLOT:
+if config['LAYEROUTPLOT']:
   """
   https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/
   save outputs of first 16 filters 
