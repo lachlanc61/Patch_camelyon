@@ -2,7 +2,7 @@
 DOTRAIN: True       #train model from scratch
 PREPLOT: False       #plot some images before running model
 POSTPLOT: True       #plot accuracy and loss over time
-LAYEROUTPLOT: True  #plot layer outputs - not working yet
+LAYEROUTPLOT: False  #plot layer outputs
 
 #workdir and inputfile
 wdirname: 'train'     #working directory relative to script    
