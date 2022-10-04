@@ -43,7 +43,7 @@ def build(config):
     #Initialise basic TF model
     """
     Simpler, faster model for testing, still gets 0.7-0.75 most of the time
-    """
+
     model = Sequential(
         [
             keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
@@ -60,7 +60,7 @@ def build(config):
             keras.layers.Dense(1, activation='sigmoid', name="predictions") 
         ], name = "my_model" 
     )   
-
+    """
 
     """
     gets ~0.75 fairly consistently - slow, large
@@ -81,6 +81,39 @@ def build(config):
         ], name = "my_model" 
     )   
     """
+
+    model = Sequential(
+        [
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', input_shape = (96, 96, 3)),
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Dropout(0.3),
+            keras.layers.MaxPooling2D(pool_size = 3),
+
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Dropout(0.3),
+            keras.layers.MaxPooling2D(pool_size = 3),
+
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Dropout(0.3),
+            keras.layers.MaxPooling2D(pool_size = 3),
+
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
+            keras.layers.Dropout(0.3),
+
+            keras.layers.Flatten(),
+            keras.layers.Dense(128, activation='relu'),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(1, activation = 'sigmoid'),
+        ], name = "my_model" 
+    )  
+
 
     #view model summary
     model.summary()
