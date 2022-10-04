@@ -1,8 +1,7 @@
 # outputs, checkpoints
-out
-data
-train
-examples
+./out/*
+./train/*
+./examples
 
 # virtualenv
 .venv/
