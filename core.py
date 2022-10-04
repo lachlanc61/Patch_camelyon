@@ -1,7 +1,7 @@
-import sys 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -13,34 +13,20 @@ import src.utils as utils
 
 """
 Practice project - histology
-moredocs
 
 """
 #-----------------------------------
 #Vars
 #-----------------------------------
 
-cfgloc='config.yaml'
-
-#-----------------------------------
-#FUNCTIONS
-#-----------------------------------
-
-def normalise(img, labels):
-  """
-  simple normaliser to pass to tfds.map
-    scales 0-255 to 0-1
-    receives tensor tuple, returns same 
-  """
-  img = tf.cast(img, tf.float32)
-  img = img/255.
-  return img, labels
+CONFIG_FILE='config.yaml'
 
 #-----------------------------------
 #INITIALISE
 #-----------------------------------
 
-config=utils.readcfg(cfgloc)
+config=utils.readcfg(CONFIG_FILE)
+
 wdirname=config['wdirname']
 odirname=config['odirname']
 batchlen=config['batchlen']
@@ -48,7 +34,7 @@ batchlen=config['batchlen']
 #if we're not training, hide GPU to avoid it going OOM when viewing layer outputs
 #   sure there must be a way to do this more cleanly
 if not config['DOTRAIN']:
-  tf.config.set_visible_devices([], 'GPU')
+    tf.config.set_visible_devices([], 'GPU')
 
 print(f'python version: {sys.version}')
 print(f'tensorflow version: {tf.__version__}')
@@ -56,23 +42,7 @@ print(f'tensorflow version: {tf.__version__}')
 gpu_available = (len(tf.config.list_physical_devices('GPU')) > 0)
 print(f'GPU: {gpu_available}')
 
-
-#initialise directories relative to script
-script = os.path.realpath(__file__) #_file = current script
-spath=os.path.dirname(script) 
-wdir=os.path.join(spath,wdirname)
-odir=os.path.join(spath,odirname)
-
-checkpoint_path = os.path.join(wdir,"cp-{epoch:04d}.ckpt")
-checkpoint_dir = os.path.dirname(checkpoint_path)
-
-print("script path:", spath)
-print("working path:", wdir)
-print("output path:", odir)
-print("cp:", checkpoint_path)
-print("cp:", checkpoint_dir)
-print("---------------")
-
+spath, wdir, odir, checkpoint_path, checkpoint_dir = utils.initialise(config)
 
 #-----------------------------------
 #MAIN START
@@ -87,9 +57,9 @@ dtest = data['test']
 
 #normalise all to range(0,1) - speeds up ML calc
 # tfds.map performs (function) on each element of the array
-dtrain = dtrain.map(normalise)
-dvalidation = dvalidation.map(normalise)
-dtest = dtest.map(normalise)
+dtrain = dtrain.map(utils.normalise)
+dvalidation = dvalidation.map(utils.normalise)
+dtest = dtest.map(utils.normalise)
 
 #shuffle the training data to use a different set each time
 dtrain=dtrain.shuffle(config['buffer'])
@@ -379,8 +349,6 @@ if config['LAYEROUTPLOT']:
 
 print("CLEAN EXIT")
 exit()
-
-
 
 """
 performance log
