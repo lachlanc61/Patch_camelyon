@@ -1,7 +1,5 @@
 # outputs, checkpoints
-./out/
-!/out/gitkeep
-./train/
-!/train/.gitkeep
+./out
+./train
 ./examples
 
