@@ -20,7 +20,7 @@ Practice project - histology
 #-----------------------------------
 
 CONFIG_FILE='config.yaml'
-
+DSETNAME='patch_camelyon'
 #-----------------------------------
 #INITIALISE
 #-----------------------------------
@@ -31,52 +31,15 @@ wdirname=config['wdirname']
 odirname=config['odirname']
 batchlen=config['batchlen']
 
-#if we're not training, hide GPU to avoid it going OOM when viewing layer outputs
-#   sure there must be a way to do this more cleanly
-if not config['DOTRAIN']:
-    tf.config.set_visible_devices([], 'GPU')
-
-print(f'python version: {sys.version}')
-print(f'tensorflow version: {tf.__version__}')
-
-gpu_available = (len(tf.config.list_physical_devices('GPU')) > 0)
-print(f'GPU: {gpu_available}')
-
 spath, wdir, odir, checkpoint_path, checkpoint_dir = utils.initialise(config)
 
 #-----------------------------------
 #MAIN START
 #-----------------------------------
 
-print("---------------")
-data, info = tfds.load('patch_camelyon', with_info = True, as_supervised = True)
+dtrain, dvalidation, dtest, dsinfo = utils.datainit(config, DSETNAME)
 
-dtrain = data['train']
-dvalidation = data['validation']
-dtest = data['test']
-
-#normalise all to range(0,1) - speeds up ML calc
-# tfds.map performs (function) on each element of the array
-dtrain = dtrain.map(utils.normalise)
-dvalidation = dvalidation.map(utils.normalise)
-dtest = dtest.map(utils.normalise)
-
-#shuffle the training data to use a different set each time
-dtrain=dtrain.shuffle(config['buffer'])
-
-#get a sub-batch for training
-dtrain = dtrain.batch(batchlen) 
-dvalidation = dvalidation.batch(batchlen) 
-dtest = dtest.batch(batchlen) 
-
-#extract tensor elements
-#   iter converts to iterable object
-#   next extracts element from each
-#   comes as (image, label) tuple
-
-timg, tlabels = next(iter(dtrain))
-vimg, vlabels = next(iter(dvalidation))
-testimg, testlabels  = next(iter(dtest))
+timg, tlabels, vimg, vlabels, testimg, testlabels = utils.tensorinit(dtrain, dvalidation, dtest)
 
 #check shapes for both
 #should correspond to batch size
