@@ -84,34 +84,34 @@ def build(config):
 
     model = Sequential(
         [
-            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', input_shape = (96, 96, 3)),
-            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'),
-            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', input_shape = (96, 96, 3), name="b1_conv1"),
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', name="b1_conv2"),
+            keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', name="b1_conv3"),
             keras.layers.Dropout(0.3),
             keras.layers.MaxPooling2D(pool_size = 3),
 
-            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
-            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
-            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu', name="b2_conv1"),
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu', name="b2_conv2"),
+            keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu', name="b2_conv3"),
             keras.layers.Dropout(0.3),
             keras.layers.MaxPooling2D(pool_size = 3),
 
-            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
-            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
-            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'),
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu', name="b3_conv1"),
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu', name="b3_conv2"),
+            keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu', name="b3_conv3"),
             keras.layers.Dropout(0.3),
             keras.layers.MaxPooling2D(pool_size = 3),
 
-            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
-            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
-            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu'),
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu', name="b4_conv1"),
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu', name="b4_conv2"),
+            keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'elu', name="b4_conv3"),
             keras.layers.Dropout(0.3),
 
             keras.layers.Flatten(),
-            keras.layers.Dense(128, activation='relu'),
+            keras.layers.Dense(128, activation='relu', name="dense1"),
             keras.layers.Dropout(0.3),
-            keras.layers.Dense(1, activation = 'sigmoid'),
-        ], name = "my_model" 
+            keras.layers.Dense(1, activation = 'sigmoid', name="output"),
+        ], name = "model3" 
     )  
 
 

@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,7 +19,7 @@ def preplot(config, timg, tlabels):
             ax.set_axis_off()
 
         plt.show()
-        exit()
+        sys.exit()
 
 def layerplot(config, model, timg, tlabels, odir):
         
