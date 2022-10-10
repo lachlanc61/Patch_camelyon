@@ -38,15 +38,10 @@ spath, wdir, odir, checkpoint_path, checkpoint_dir = utils.initialise(config)
 #MAIN START
 #-----------------------------------
 
-dtrain, dvalidation, dtest, dsinfo = utils.datainit(config, DSETNAME)
+dtrain, dval, dtest, dsinfo = utils.datainit(config, DSETNAME)
 
-timg, tlabels, vimg, vlabels, testimg, testlabels = utils.tensorinit(dtrain, dvalidation, dtest)
+timg, tlabels, vimg, vlabels, testimg, testlabels = utils.batchcheck(dtrain, dval, dtest, batchlen)
 
-#check shapes for both
-#should correspond to batch size
-print("labelshape:",vlabels.shape)
-print("imgshape:",timg.shape)
-print("batch size:",batchlen)
 
 if config['PREPLOT']:
     vis.preplot(config)
@@ -59,7 +54,7 @@ l2reg=tf.keras.regularizers.L2(config['lamda'])
 
 model = tfmodel.build(config)
 
-model, fitlog = tfmodel.train(model, timg, tlabels, vimg, vlabels, config, checkpoint_path)
+model, fitlog = tfmodel.train(model, dtrain, dval, config, checkpoint_path)
 
 vis.layerplot(config, model, timg, tlabels, odir)
 

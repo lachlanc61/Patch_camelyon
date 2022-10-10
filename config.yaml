@@ -1,6 +1,6 @@
 #control flags
 DOTRAIN: True       #train model from scratch
-PREPLOT: True       #plot some images before running model
+PREPLOT: False       #plot some images before running model
 POSTPLOT: True       #plot accuracy and loss over time
 LAYEROUTPLOT: False  #plot layer outputs
 
@@ -14,11 +14,11 @@ odirname: 'out'      #output directory relative to script
 cptoload: '/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-0032.ckpt'
 
 #data and model handling
-batchlen: 256    #size of batch for fitting
-buffer: 5000       #buffer for shuffling
+batchlen: 1024    #size of batch for fitting
+buffer: 10000       #buffer for shuffling
 nepochs: 100       #no. epochs
-stoplim: 25        #patience for early stop
-batch_size: 32     #size of batch for training
+stoplim: 5        #patience for early stop
+savesteps: 256     #save checkpoint every X steps
 
 #hyperparams
 lamda: 0.0001      #regularisation param

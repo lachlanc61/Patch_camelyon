@@ -58,6 +58,7 @@ def normalise(img, labels):
 
 def datainit(config, dsetname):
   print("---------------")
+  #load the dataset
   data, dsinfo = tfds.load(dsetname, with_info = True, as_supervised = True)
 
   dtrain = data['train']
@@ -74,14 +75,14 @@ def datainit(config, dsetname):
   dtrain=dtrain.shuffle(config['buffer'])
 
   #get a sub-batch for training
-  dtrain = dtrain.batch(config['batchlen']) 
-  dvalidation = dvalidation.batch(config['batchlen']) 
-  dtest = dtest.batch(config['batchlen']) 
+  dtrain = dtrain.batch(config['batchlen']) #.prefetch(1)
+  dvalidation = dvalidation.batch(config['batchlen']) #.prefetch(1)
+  dtest = dtest.batch(config['batchlen']) #.prefetch(1)
 
   return dtrain, dvalidation, dtest, dsinfo
 
 
-def tensorinit(dtrain, dvalidation, dtest):
+def batchcheck(dtrain, dvalidation, dtest, batchlen):
   #extract tensor elements
   #   iter converts to iterable object
   #   next extracts element from each
@@ -90,4 +91,20 @@ def tensorinit(dtrain, dvalidation, dtest):
   vimg, vlabels = next(iter(dvalidation))
   testimg, testlabels  = next(iter(dtest))
 
+  #check shapes for both
+  #should correspond to batch size
+  print("labelshape:",vlabels.shape)
+  print("imgshape:",timg.shape)
+  print("batch size:",batchlen)
+
   return timg, tlabels, vimg, vlabels, testimg, testlabels
+
+
+def getlen(dtrain, dsinfo):
+  """
+  report length of dataset
+  """
+  print("from data:")
+  print(dtrain.cardinality().numpy())
+  print("from info:")
+  print(dsinfo.splits['train'].num_examples)

@@ -60,10 +60,10 @@ def build(config):
             keras.layers.Dense(1, activation='sigmoid', name="predictions") 
         ], name = "my_model" 
     )   
-    """
+    
 
-    """
-    gets ~0.75 fairly consistently - slow, large
+    
+    #gets ~0.75 fairly consistently - slow, large
     model = Sequential(
         [
             keras.layers.Conv2D(256,3, padding='same', activation='relu', input_shape=[96, 96, 3]),
@@ -81,6 +81,8 @@ def build(config):
         ], name = "my_model" 
     )   
     """
+
+    
 
     model = Sequential(
         [
@@ -113,7 +115,7 @@ def build(config):
             keras.layers.Dense(1, activation = 'sigmoid', name="output"),
         ], name = "model3" 
     )  
-
+    
 
     #view model summary
     model.summary()
@@ -128,7 +130,7 @@ def build(config):
 
     return model
 
-def train(model, timg, tlabels, vimg, vlabels, config, checkpoint_path):
+def train(model, dtrain, dval, config, checkpoint_path):
 
     #Callbacks
     #   (special utilities executed during training)
@@ -155,7 +157,7 @@ def train(model, timg, tlabels, vimg, vlabels, config, checkpoint_path):
                                                 #  save_best_only=True,
                                                     monitor='val_acc',
                                                     verbose=1,
-                                                    save_freq=1*config['batch_size'])
+                                                    save_freq=1*config['savesteps'])
 
     #TRAIN/LOAD
 
@@ -167,12 +169,11 @@ def train(model, timg, tlabels, vimg, vlabels, config, checkpoint_path):
         #   epochs = N. cycles
         #   validation data is tested each epoch
         fitlog = model.fit(
-            timg,tlabels,
+            dtrain,
             epochs=config['nepochs'],
-            validation_data = (vimg, vlabels),
+            validation_data = dval,
             validation_freq = 1,
             callbacks=[stopcond,cp_callback],
-            batch_size=config['batch_size'],
             verbose=1
         )
 
@@ -209,8 +210,8 @@ def train(model, timg, tlabels, vimg, vlabels, config, checkpoint_path):
         else: #if not training
             #load from checkpoint variable
             model.load_weights(config['cptoload'])
-            tloss, tacc = model.evaluate(timg, tlabels, verbose=2)
-            vloss, vacc = model.evaluate(vimg, vlabels, verbose=2)
+            tloss, tacc = model.evaluate(dtrain, verbose=2)
+            vloss, vacc = model.evaluate(dval, verbose=2)
 
             print("MODEL LOAD SUCCESSFUL\n"
             f'checkpoint: {config["cptoload"]}\n'
