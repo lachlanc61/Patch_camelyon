@@ -81,7 +81,6 @@ def build(config):
         ], name = "my_model" 
     )   
     """
-
     
 
     model = Sequential(

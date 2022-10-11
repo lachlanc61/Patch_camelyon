@@ -6,6 +6,9 @@ import sys
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from tensorflow import keras
+from keras import Sequential 
+
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
@@ -55,34 +58,65 @@ def normalise(img, labels):
   img = img/255.
   return img, labels
 
+def rotateflip(ds):
+  """
+  augments dataset by rotation/flipping
+
+  https://www.tensorflow.org/guide/gpu
+  manually placed on CPU because fails on GPU... not clear why
+
+  would prefer to place in primary Sequential model but can't put on CPU there
+  eg. https://www.tensorflow.org/tutorials/images/data_augmentation
+  """
+  #define the augmentations
+  augmentation = Sequential(
+    [
+        keras.layers.RandomFlip("horizontal_and_vertical", input_shape = (96, 96, 3)),
+        keras.layers.RandomRotation(0.2),
+    ]
+  )
+  #map augmentation to each image in dataset
+  ds=ds.map(lambda x, y: (augmentation(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
+
+  #return dataset with prefetch
+  return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
 def datainit(config, dsetname):
   print("---------------")
   #load the dataset
-  data, dsinfo = tfds.load(dsetname, with_info = True, as_supervised = True)
+  with tf.device('/CPU:0'):
 
-  dtrain = data['train']
-  dvalidation = data['validation']
-  dtest = data['test']
+    data, dsinfo = tfds.load(dsetname, with_info = True, as_supervised = True)
 
-  #normalise all to range(0,1) - speeds up ML calc
-  # tfds.map performs (function) on each element of the array
-  dtrain = dtrain.map(normalise)
-  dvalidation = dvalidation.map(normalise)
-  dtest = dtest.map(normalise)
+    dtrain = data['train']
+    dvalidation = data['validation']
+    dtest = data['test']
 
-  #shuffle the training data to use a different set each time
-  dtrain=dtrain.shuffle(config['buffer'])
+    #normalise all to range(0,1) - speeds up ML calc
+    # tfds.map performs (function) on each element of the array
+    dtrain = dtrain.map(normalise)
+    dvalidation = dvalidation.map(normalise)
+    dtest = dtest.map(normalise)
 
-  #get a sub-batch for training
-  dtrain = dtrain.batch(config['batchlen']) #.prefetch(1)
-  dvalidation = dvalidation.batch(config['batchlen']) #.prefetch(1)
-  dtest = dtest.batch(config['batchlen']) #.prefetch(1)
+    #shuffle the training data to use a different set each time
+    dtrain=dtrain.shuffle(config['buffer'])
 
+    #break into sub-batches for training
+    dtrain = dtrain.batch(config['batchlen']) #.prefetch(1)
+    dvalidation = dvalidation.batch(config['batchlen']) #.prefetch(1)
+    dtest = dtest.batch(config['batchlen']) #.prefetch(1)
+
+    #apply augmentations to train only
+    dtrain = rotateflip(dtrain)
+
+    dtrain = dtrain.repeat(config['nepochs'])
   return dtrain, dvalidation, dtest, dsinfo
 
 
 def batchcheck(dtrain, dvalidation, dtest, batchlen):
+  """
+  prints diams of first batch
+  """
   #extract tensor elements
   #   iter converts to iterable object
   #   next extracts element from each

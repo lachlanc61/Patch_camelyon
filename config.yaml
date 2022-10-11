@@ -17,7 +17,7 @@ cptoload: '/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-00
 batchlen: 1024    #size of batch for fitting
 buffer: 10000       #buffer for shuffling
 nepochs: 100       #no. epochs
-stoplim: 5        #patience for early stop
+stoplim: 3        #patience for early stop
 savesteps: 257     #save checkpoint every X steps
 
 #hyperparams
