@@ -107,9 +107,13 @@ def datainit(config, dsetname):
     dtest = dtest.batch(config['batchlen']) #.prefetch(1)
 
     #apply augmentations to train only
+    #   these objects seem to work like generators - ie. rotateflip is reapplied to each 
     dtrain = rotateflip(dtrain)
 
-    dtrain = dtrain.repeat(config['nepochs'])
+    #repeat step loops generator within epoch
+    #from https://stackoverflow.com/questions/55421290/tensorflow-2-0-keras-how-to-write-image-summaries-for-tensorboard/55754700#55754700
+    #does not seem to work as intended
+    #dtrain = dtrain.repeat(config['nepochs'])
   return dtrain, dvalidation, dtest, dsinfo
 
 
