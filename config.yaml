@@ -18,7 +18,7 @@ batchlen: 1024    #size of batch for fitting
 buffer: 10000       #buffer for shuffling
 nepochs: 100       #no. epochs
 stoplim: 5        #patience for early stop
-savesteps: 256     #save checkpoint every X steps
+savesteps: 257     #save checkpoint every X steps
 
 #hyperparams
 lamda: 0.0001      #regularisation param
