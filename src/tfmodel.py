@@ -15,63 +15,8 @@ from classification_models.tfkeras import Classifiers
 
 import src.utils as utils
 
+def buildown():
 
-def build(config):
-
-    
-    #https://www.kaggle.com/competitions/histopathologic-cancer-detection/discussion/83760
-
-
-    #https://stackoverflow.com/questions/66679241/import-resnext-into-keras
-    #resnext50 in keras
-    #ResNeXt50, preprocess_input = Classifiers.get('resnext50')
-    #base_model = ResNeXt50(include_top = False, input_shape=(96, 96, 3), weights='imagenet')
-
-    """
-    base_model = keras.applications.resnet50.ResNet50(
-        weights='imagenet',  # Load weights pre-trained on ImageNet.
-        input_shape=(96, 96, 3),
-        include_top=False)  # Do not include the ImageNet classifier at the top.
-    """
-
-    #https://keras.io/api/applications/efficientnet/
-    base_model = tf.keras.applications.EfficientNetB4(
-        include_top=False,
-        weights="imagenet",
-        input_shape=(96, 96, 3),
-    )
-
-    base_model.trainable = False
-
-
-    inputs = keras.Input(shape=(96, 96, 3))
-    
-    x = base_model(inputs, training=False)
-
-    #https://keras.io/guides/transfer_learning/
-    x = keras.layers.GlobalAveragePooling2D()(x)
-    #x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(128, activation='relu', name="dense1")(x)
-    x = keras.layers.Dropout(0.3)(x)
-    # A Dense classifier with a single unit (binary classification)
-    outputs = keras.layers.Dense(1, activation = 'sigmoid', name="output")(x)
-
-    """
-    outputs = Sequential(
-        [
-            keras.layers.AveragePooling2D(pool_size = 3),
-            keras.layers.Flatten(),
-            keras.layers.Dense(128, activation='relu', name="dense1"),
-            keras.layers.Dropout(0.3),
-            keras.layers.Dense(1, activation = 'sigmoid', name="output"),
-        ], name="tail1"
-    )
-    """
-    model = keras.Model(inputs, outputs)
-
-
-
-    """
     model = Sequential(
         [
             keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', input_shape = (96, 96, 3), name="b1_conv1"),
@@ -103,8 +48,71 @@ def build(config):
             keras.layers.Dense(1, activation = 'sigmoid', name="output"),
         ], name = "model3" 
     )  
-    """
+    return model
 
+
+def buildresnet():
+
+    base_model = keras.applications.resnet50.ResNet50(
+            weights='imagenet',  # Load weights pre-trained on ImageNet.
+            input_shape=(96, 96, 3),
+            include_top=False
+    )  # Do not include the ImageNet classifier at the top.
+
+    #https://stackoverflow.com/questions/66679241/import-resnext-into-keras
+    #resnext50 in keras
+    #ResNeXt50, preprocess_input = Classifiers.get('resnext50')
+    #base_model = ResNeXt50(include_top = False, input_shape=(96, 96, 3), weights='imagenet')
+
+    base_model.trainable = False
+
+    inputs = keras.Input(shape=(96, 96, 3))
+
+    x = base_model(inputs, training=False)
+
+    #https://keras.io/guides/transfer_learning/
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    #x = keras.layers.Flatten()(x)
+    x = keras.layers.Dense(128, activation='relu', name="dense1")(x)
+    x = keras.layers.Dropout(0.3)(x)
+    # A Dense classifier with a single unit (binary classification)
+    outputs = keras.layers.Dense(1, activation = 'sigmoid', name="output")(x)
+
+    model = keras.Model(inputs, outputs)
+
+    return model
+
+
+def buildenet():
+    #https://keras.io/api/applications/efficientnet/
+    base_model = tf.keras.applications.EfficientNetB4(
+        include_top=False,
+        weights="imagenet",
+        input_shape=(96, 96, 3),
+    )
+
+    base_model.trainable = False
+
+    inputs = keras.Input(shape=(96, 96, 3))
+
+    x = base_model(inputs, training=False)
+
+    #https://keras.io/guides/transfer_learning/
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    #x = keras.layers.Flatten()(x)
+    x = keras.layers.Dense(128, activation='relu', name="dense1")(x)
+    x = keras.layers.Dropout(0.3)(x)
+    # A Dense classifier with a single unit (binary classification)
+    outputs = keras.layers.Dense(1, activation = 'sigmoid', name="output")(x)
+
+    model = keras.Model(inputs, outputs)
+
+    return model
+
+def build(config):
+
+    model = buildenet()
+   
     #view model summary
     model.summary()
 

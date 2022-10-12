@@ -79,7 +79,7 @@ def rotateflip(ds):
   ds=ds.map(lambda x, y: (augmentation(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
 
   #return dataset with prefetch
-  return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+  return ds
 
 def datainit(config, dsetname):
   print("---------------")
@@ -102,22 +102,25 @@ def datainit(config, dsetname):
     dtrain=dtrain.shuffle(config['buffer'])
 
     #break into sub-batches for training
-    dtrain = dtrain.batch(config['batchlen']) #.prefetch(1)
-    dvalidation = dvalidation.batch(config['batchlen']) #.prefetch(1)
-    dtest = dtest.batch(config['batchlen']) #.prefetch(1)
+    dtrain = dtrain.batch(config['batchsize']) #.prefetch(1)
+    dvalidation = dvalidation.batch(config['batchsize']) #.prefetch(1)
+    dtest = dtest.batch(config['batchsize']) #.prefetch(1)
 
     #apply augmentations to train only
     #   these objects seem to work like generators - ie. rotateflip is reapplied to each 
     dtrain = rotateflip(dtrain)
 
+    dtrain=dtrain.prefetch(1)
+    
     #repeat step loops generator within epoch
     #from https://stackoverflow.com/questions/55421290/tensorflow-2-0-keras-how-to-write-image-summaries-for-tensorboard/55754700#55754700
     #does not seem to work as intended
     #dtrain = dtrain.repeat(config['nepochs'])
+
   return dtrain, dvalidation, dtest, dsinfo
 
 
-def batchcheck(dtrain, dvalidation, dtest, batchlen):
+def batchcheck(dtrain, dvalidation, dtest, batchsize):
   """
   prints diams of first batch
   """
@@ -133,7 +136,7 @@ def batchcheck(dtrain, dvalidation, dtest, batchlen):
   #should correspond to batch size
   print("labelshape:",vlabels.shape)
   print("imgshape:",timg.shape)
-  print("batch size:",batchlen)
+  print("batch size:",batchsize)
 
   return timg, tlabels, vimg, vlabels, testimg, testlabels
 
