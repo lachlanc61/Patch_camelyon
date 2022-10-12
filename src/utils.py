@@ -58,7 +58,19 @@ def normalise(img, labels):
   img = img/255.
   return img, labels
 
-def rotateflip(ds):
+
+def tfresize(ds, config):
+  augmentation = Sequential(
+    [
+        keras.layers.Resizing(config['sizetarget'],config['sizetarget'])
+    ]
+  )
+
+  ds=ds.map(lambda x, y: (augmentation(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
+
+  return ds
+
+def rotateflip(ds, config):
   """
   augments dataset by rotation/flipping
 
@@ -73,6 +85,7 @@ def rotateflip(ds):
     [
         keras.layers.RandomFlip("horizontal_and_vertical", input_shape = (96, 96, 3)),
         keras.layers.RandomRotation(0.2),
+        keras.layers.RandomZoom(0.2),
     ]
   )
   #map augmentation to each image in dataset
@@ -92,6 +105,12 @@ def datainit(config, dsetname):
     dvalidation = data['validation']
     dtest = data['test']
 
+
+    #use map to apply normalisation, transformations etc
+    #tdfs.map applies every epoch
+    # ie. random transformations different each time
+    #NB overhead here? cost of applying normalise, resize etc every epoch vs once at start?
+
     #normalise all to range(0,1) - speeds up ML calc
     # tfds.map performs (function) on each element of the array
     dtrain = dtrain.map(normalise)
@@ -108,10 +127,14 @@ def datainit(config, dsetname):
 
     #apply augmentations to train only
     #   these objects seem to work like generators - ie. rotateflip is reapplied to each 
-    dtrain = rotateflip(dtrain)
+    dtrain = rotateflip(dtrain, config)
+
+    dtrain = tfresize(dtrain, config)
+    dvalidation = tfresize(dvalidation, config)
+    dtest = tfresize(dtest, config)
 
     dtrain=dtrain.prefetch(1)
-    
+
     #repeat step loops generator within epoch
     #from https://stackoverflow.com/questions/55421290/tensorflow-2-0-keras-how-to-write-image-summaries-for-tensorboard/55754700#55754700
     #does not seem to work as intended

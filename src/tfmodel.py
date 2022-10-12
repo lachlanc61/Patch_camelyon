@@ -51,11 +51,11 @@ def buildown():
     return model
 
 
-def buildresnet():
+def buildresnet(config):
 
     base_model = keras.applications.resnet50.ResNet50(
             weights='imagenet',  # Load weights pre-trained on ImageNet.
-            input_shape=(96, 96, 3),
+            input_shape=(config['sizetarget'], config['sizetarget'], 3),
             include_top=False
     )  # Do not include the ImageNet classifier at the top.
 
@@ -64,21 +64,28 @@ def buildresnet():
     #ResNeXt50, preprocess_input = Classifiers.get('resnext50')
     #base_model = ResNeXt50(include_top = False, input_shape=(96, 96, 3), weights='imagenet')
 
-    base_model.trainable = False
+    model = Sequential(
+        [
+            base_model,
+            keras.layers.Flatten(),
+            keras.layers.Dense(256, use_bias=False, name="tail_dense1"),
+            keras.layers.BatchNormalization(),
+            keras.layers.Activation("relu"),
+            keras.layers.Dropout(0.5),
+            keras.layers.Dense(1, activation = 'sigmoid', name="output"),
+        ], name = "model3" 
+    )  
 
-    inputs = keras.Input(shape=(96, 96, 3))
+    base_model.Trainable=True
 
-    x = base_model(inputs, training=False)
-
-    #https://keras.io/guides/transfer_learning/
-    x = keras.layers.GlobalAveragePooling2D()(x)
-    #x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(128, activation='relu', name="dense1")(x)
-    x = keras.layers.Dropout(0.3)(x)
-    # A Dense classifier with a single unit (binary classification)
-    outputs = keras.layers.Dense(1, activation = 'sigmoid', name="output")(x)
-
-    model = keras.Model(inputs, outputs)
+    set_trainable=False
+    for layer in base_model.layers:
+        if layer.name == 'res5a_branch2a':
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
 
     return model
 
@@ -111,7 +118,7 @@ def buildenet():
 
 def build(config):
 
-    model = buildenet()
+    model = buildresnet(config)
    
     #view model summary
     model.summary()
@@ -120,7 +127,7 @@ def build(config):
     #   acc = track accuracy vs train/val sets
     model.compile(
         loss=tf.keras.losses.BinaryCrossentropy(),
-        optimizer=tf.keras.optimizers.Adam(),
+        optimizer=tf.keras.optimizers.Adam(config['learnrate']),
         metrics=['acc'],
     )
 
@@ -136,6 +143,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
     #https://towardsdatascience.com/a-practical-introduction-to-early-stopping-in-machine-learning-550ac88bc8fd
     stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=config['stoplim'])
 
+    reduce = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', patience=1, verbose=1, factor=0.1)
 
     #save model during training every 5 batches
     # save best model only based on val_loss
@@ -169,7 +177,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
             epochs=config['nepochs'],
             validation_data = dval,
             validation_freq = 1,
-            callbacks=[stopcond,cp_callback],
+            callbacks=[stopcond,reduce,cp_callback],
             verbose=1
         )
 

@@ -15,12 +15,13 @@ cptoload: '/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-00
 
 #data and model handling
 #batchsize: 1024    #size of batch for fitting
-batchsize: 128
+batchsize: 512
 buffer: 10000       #buffer for shuffling
 nepochs: 100       #no. epochs
 stoplim: 3        #patience for early stop
 savesteps: 257     #save checkpoint every X steps
-imageresize: 196
+sizetarget: 196
+learnrate: 0.001
 
 #hyperparams
 lamda: 0.0001      #regularisation param
