@@ -52,6 +52,7 @@ def buildown():
 
 
 def buildresnet(config):
+    #https://www.kaggle.com/code/skloveyyp/keras-resnet50/notebook
 
     base_model = keras.applications.resnet50.ResNet50(
             weights='imagenet',  # Load weights pre-trained on ImageNet.
@@ -90,50 +91,60 @@ def buildresnet(config):
     return model
 
 
-def buildenet():
+def buildenet(config):
     #https://keras.io/api/applications/efficientnet/
-    base_model = tf.keras.applications.EfficientNetB4(
+    #https://www.kaggle.com/code/taylorkern/tk-efficientnet
+
+    base_model = tf.keras.applications.EfficientNetB0(
         include_top=False,
         weights="imagenet",
         input_shape=(96, 96, 3),
     )
 
-    base_model.trainable = False
-
-    inputs = keras.Input(shape=(96, 96, 3))
-
-    x = base_model(inputs, training=False)
-
-    #https://keras.io/guides/transfer_learning/
-    x = keras.layers.GlobalAveragePooling2D()(x)
-    #x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(128, activation='relu', name="dense1")(x)
-    x = keras.layers.Dropout(0.3)(x)
-    # A Dense classifier with a single unit (binary classification)
-    outputs = keras.layers.Dense(1, activation = 'sigmoid', name="output")(x)
-
-    model = keras.Model(inputs, outputs)
+    model = Sequential(
+        [
+            base_model,
+            keras.layers.Flatten(),
+            keras.layers.Dense(64, activation='relu'),
+            keras.layers.Dropout(0.5),
+            keras.layers.Dense(32, activation='relu'),
+            keras.layers.Dropout(0.5),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(2, activation='softmax')
+        ], name = "model3" 
+    ) 
 
     return model
 
 def build(config):
 
-    model = buildresnet(config)
-   
-    #view model summary
-    model.summary()
+    if config['premodel'] == "resnet":
 
-    #compile the model
-    #   acc = track accuracy vs train/val sets
-    model.compile(
-        loss=tf.keras.losses.BinaryCrossentropy(),
-        optimizer=tf.keras.optimizers.Adam(config['learnrate']),
-        metrics=['acc'],
-    )
+        model = buildresnet(config)
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+    elif config['premodel'] == "efficientnet":
+
+        model = buildenet(config)
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
 
     return model
 
 def train(model, dtrain, dval, config, checkpoint_path):
+
 
     #Callbacks
     #   (special utilities executed during training)
