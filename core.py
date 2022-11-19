@@ -44,7 +44,7 @@ timg, tlabels, vimg, vlabels, testimg, testlabels = utils.batchcheck(dtrain, dva
 
 
 if config['PREPLOT']:
-    vis.preplot(config)
+    vis.preplot(config, timg, tlabels)
 
 #we are overfitting pretty heavily, try regularisation
 l2reg=tf.keras.regularizers.L2(config['lamda'])

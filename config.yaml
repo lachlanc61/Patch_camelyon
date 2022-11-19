@@ -21,8 +21,8 @@ nepochs: 100       #no. epochs
 stoplim: 3        #patience for early stop
 savesteps: 257     #save checkpoint every X steps
 
-premodel: resnet
-sizetarget: 196
+premodel: none
+sizetarget: 96
 learnrate: 0.001
 #premodel: efficientnet
 #sizetarget: 96

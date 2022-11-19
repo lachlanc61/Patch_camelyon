@@ -118,6 +118,7 @@ def buildenet(config):
 
 def build(config):
 
+
     if config['premodel'] == "resnet":
 
         model = buildresnet(config)
@@ -140,10 +141,20 @@ def build(config):
             optimizer=tf.keras.optimizers.Adam(config['learnrate']),
             metrics=['acc'],
         )
+    else:
+        model = buildown()
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
 
     return model
 
-def train(model, dtrain, dval, config, checkpoint_path):
+def train(model, dtrain, dval, config, checkpoint_path, odir):
 
 
     #Callbacks
@@ -222,6 +233,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
             ax[1].legend()
 
             plt.show()
+            plt.savefig(os.path.join(odir, f'fitresults.png'), dpi=300)
         else: #if not training
             #load from checkpoint variable
             model.load_weights(config['cptoload'])
