@@ -54,7 +54,7 @@ l2reg=tf.keras.regularizers.L2(config['lamda'])
 
 model = tfmodel.build(config)
 
-model, fitlog = tfmodel.train(model, dtrain, dval, config, checkpoint_path)
+model, fitlog = tfmodel.train(model, dtrain, dval, config, odir, checkpoint_path)
 
 vis.layerplot(config, model, timg, tlabels, odir)
 
