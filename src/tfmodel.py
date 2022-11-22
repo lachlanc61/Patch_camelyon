@@ -15,6 +15,27 @@ from classification_models.tfkeras import Classifiers
 
 import src.utils as utils
 
+
+def buildsimple():
+    model = Sequential(
+    [
+        keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
+        keras.layers.MaxPooling2D(2, name="block1_pool"),
+        keras.layers.Conv2D(32,3, padding='same', activation='relu', name="block2_conv1"),
+        keras.layers.MaxPooling2D(2, name="block2_pool"),
+        keras.layers.Conv2D(16,3, padding='same', activation='relu', name="block3_conv1"),
+        keras.layers.MaxPooling2D(2, name="block3_pool"),
+        keras.layers.Flatten(),
+        keras.layers.Dense(256, activation='relu', name="dense1"),
+        keras.layers.Dense(128, activation='relu', name="dense2"),
+        keras.layers.Dense(56, activation='relu', name="dense3"),
+        keras.layers.Dense(12, activation='relu', name="dense4"), 
+        keras.layers.Dense(1, activation='sigmoid', name="predictions") 
+    ], name = "my_model" 
+    )   
+    return model
+
+
 def buildown():
 
     model = Sequential(
@@ -138,6 +159,16 @@ def build(config):
 
         model.compile(
             loss=tf.keras.losses.CategoricalCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+    elif config['premodel'] == "simple":
+        model = buildsimple()
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
             optimizer=tf.keras.optimizers.Adam(config['learnrate']),
             metrics=['acc'],
         )
