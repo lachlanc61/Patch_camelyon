@@ -1,21 +1,21 @@
 # Overview
 
 CNN classifier detecting metastatic tissue in histology sections.
-
+#
 # Usage
 
 Run via core.py
 
-Parameters are controlled config.yaml in the package root direcoty
-
+Parameters are controlled by config.yaml in the package root direcoty
+#
 # Data
 
-The dataset is CAMELYON16, available via tfds in tensorflow
+The data is from the CAMELYON16 dataset, available via tfds in tensorflow
 
 via [tdfs](https://www.tensorflow.org/datasets/catalog/patch_camelyon): 
 
 The PatchCamelyon benchmark is a new and challenging image classification dataset. It consists of 327.680 color images (96 x 96px) extracted from histopathologic scans of lymph node sections. Each image is annoted with a binary label indicating presence of metastatic tissue in the centre 32x32 pixels of that image.
-
+#
 # Method
 
 - helper fuctions are used to initialise the package environment 
@@ -37,6 +37,7 @@ The PatchCamelyon benchmark is a new and challenging image classification datase
     - model architecture can be set to several preset options, including several simple multilayer CNNs, as well as one based on transfer learning (ResNet50)
     - tfmodel.build()
 
+
 - the selected model is trained against the train set
     - a progress plot is displayed showing train and val loss
     - training is stopped when a plateau becomes apparent in val loss, to prevent overfitting
@@ -50,13 +51,13 @@ The PatchCamelyon benchmark is a new and challenging image classification datase
 
 - finally, a subset of filters for a single random image are displayed for inspection
     - vis.layerplot()
-    
+
 <p align="left">
   <img src="./docs/IMG/filters.png" alt="filters" width="1024">
   <br />
 </p>
 
-
+#
 
 
 
