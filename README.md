@@ -1,22 +1,21 @@
 # Overview
 
-CNN classifier detecting metastatic tissue in histology sections.
-#
-# Usage
-
-Run via core.py
-
-Parameters are controlled by config.yaml in the package root direcoty
-#
-# Data
-
-The data is from the CAMELYON16 dataset, available via tfds in tensorflow
+A convolutional neural network classifier to detect metastatic tissue in histology sections, trained against the CAMELYON16 dataset.
 
 from [TensorFlow](https://www.tensorflow.org/datasets/catalog/patch_camelyon): 
 
 "The PatchCamelyon benchmark is a new and challenging image classification dataset. It consists of 327.680 color images (96 x 96px) extracted from histopathologic scans of lymph node sections." 
 
 Each image is annoted with a binary label indicating presence of metastatic tissue in the centre 32x32 pixels of that image.
+
+
+#
+# Usage
+
+Run via core.py
+
+Parameters are controlled by config.yaml in the package root direcoty
+
 #
 # Method
 
