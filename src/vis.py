@@ -52,7 +52,7 @@ def layerplot(config, model, timg, tlabels, odir):
 
         #plot original as RGB, including label as true/false 
         ax["A"].imshow(img)
-        ax["A"].set_title(bool(tlabels.numpy()[rand]))
+        ax["A"].set_title(bool(tlabels.numpy()[rand]))      #should include both expected and predicted
         ax["A"].set_axis_off()
 
         #iterate through layers, plotting first 16 filter outputs for each

@@ -13,8 +13,12 @@ from keras import Sequential
 #FUNCTIONS
 #-----------------------------------
 
-def readcfg(filepath):
-    with open(filepath, "r") as f:
+def readcfg(cfgin):
+    script = os.path.realpath(__file__) #_file = current script
+    spath=os.path.dirname(script) 
+    spath=os.path.dirname(spath)    #second call to get src/..
+    cfgfile=os.path.join(spath, cfgin)
+    with open(cfgfile, "r") as f:
         return yaml.safe_load(f)
 
 def initialise(config):
