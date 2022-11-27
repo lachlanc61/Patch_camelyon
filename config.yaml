@@ -2,7 +2,7 @@
 DOTRAIN: True       #train model from scratch
 PREPLOT: False       #plot some images before running model
 POSTPLOT: True       #plot accuracy and loss over time
-LAYEROUTPLOT: False  #plot layer outputs
+LAYEROUTPLOT: True  #plot layer outputs
 
 #workdir and inputfile
 wdirname: 'train'     #working directory relative to script    
@@ -14,11 +14,19 @@ odirname: 'out'      #output directory relative to script
 cptoload: '/home/lachlan/CODEBASE/Patch_camelyon/train/220911_vacc75_c2d64/cp-0032.ckpt'
 
 #data and model handling
-batchlen: 1024    #size of batch for fitting
+#batchsize: 1024    #size of batch for fitting
+batchsize: 512
 buffer: 10000       #buffer for shuffling
 nepochs: 100       #no. epochs
-stoplim: 5        #patience for early stop
+stoplim: 3        #patience for early stop
 savesteps: 257     #save checkpoint every X steps
+
+premodel: none
+sizetarget: 96
+learnrate: 0.001
+#premodel: efficientnet
+#sizetarget: 96
+#learnrate: 0.001
 
 #hyperparams
 lamda: 0.0001      #regularisation param

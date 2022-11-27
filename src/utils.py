@@ -6,12 +6,19 @@ import sys
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from tensorflow import keras
+from keras import Sequential 
+
 #-----------------------------------
 #FUNCTIONS
 #-----------------------------------
 
-def readcfg(filepath):
-    with open(filepath, "r") as f:
+def readcfg(cfgin):
+    script = os.path.realpath(__file__) #_file = current script
+    spath=os.path.dirname(script) 
+    spath=os.path.dirname(spath)    #second call to get src/..
+    cfgfile=os.path.join(spath, cfgin)
+    with open(cfgfile, "r") as f:
         return yaml.safe_load(f)
 
 def initialise(config):
@@ -56,33 +63,94 @@ def normalise(img, labels):
   return img, labels
 
 
+def tfresize(ds, config):
+  augmentation = Sequential(
+    [
+        keras.layers.Resizing(config['sizetarget'],config['sizetarget'])
+    ]
+  )
+
+  ds=ds.map(lambda x, y: (augmentation(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
+
+  return ds
+
+def rotateflip(ds, config):
+  """
+  augments dataset by rotation/flipping
+
+  https://www.tensorflow.org/guide/gpu
+  manually placed on CPU because fails on GPU... not clear why
+
+  would prefer to place in primary Sequential model but can't put on CPU there
+  eg. https://www.tensorflow.org/tutorials/images/data_augmentation
+  """
+  #define the augmentations
+  augmentation = Sequential(
+    [
+        keras.layers.RandomFlip("horizontal_and_vertical", input_shape = (96, 96, 3)),
+        keras.layers.RandomRotation(0.2),
+        keras.layers.RandomZoom(0.2),
+    ]
+  )
+  #map augmentation to each image in dataset
+  ds=ds.map(lambda x, y: (augmentation(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
+
+  #return dataset with prefetch
+  return ds
+
 def datainit(config, dsetname):
   print("---------------")
   #load the dataset
-  data, dsinfo = tfds.load(dsetname, with_info = True, as_supervised = True)
+  with tf.device('/CPU:0'):
 
-  dtrain = data['train']
-  dvalidation = data['validation']
-  dtest = data['test']
+    data, dsinfo = tfds.load(dsetname, with_info = True, as_supervised = True)
 
-  #normalise all to range(0,1) - speeds up ML calc
-  # tfds.map performs (function) on each element of the array
-  dtrain = dtrain.map(normalise)
-  dvalidation = dvalidation.map(normalise)
-  dtest = dtest.map(normalise)
+    dtrain = data['train']
+    dvalidation = data['validation']
+    dtest = data['test']
 
-  #shuffle the training data to use a different set each time
-  dtrain=dtrain.shuffle(config['buffer'])
 
-  #get a sub-batch for training
-  dtrain = dtrain.batch(config['batchlen']) #.prefetch(1)
-  dvalidation = dvalidation.batch(config['batchlen']) #.prefetch(1)
-  dtest = dtest.batch(config['batchlen']) #.prefetch(1)
+    #use map to apply normalisation, transformations etc
+    #tdfs.map applies every epoch
+    # ie. random transformations different each time
+    #NB overhead here? cost of applying normalise, resize etc every epoch vs once at start?
+
+    #normalise all to range(0,1) - speeds up ML calc
+    # tfds.map performs (function) on each element of the array
+    dtrain = dtrain.map(normalise)
+    dvalidation = dvalidation.map(normalise)
+    dtest = dtest.map(normalise)
+
+    #shuffle the training data to use a different set each time
+    dtrain=dtrain.shuffle(config['buffer'])
+
+    #break into sub-batches for training
+    dtrain = dtrain.batch(config['batchsize']) #.prefetch(1)
+    dvalidation = dvalidation.batch(config['batchsize']) #.prefetch(1)
+    dtest = dtest.batch(config['batchsize']) #.prefetch(1)
+
+    #apply augmentations to train only
+    #   these objects seem to work like generators - ie. rotateflip is reapplied to each 
+    dtrain = rotateflip(dtrain, config)
+
+    dtrain = tfresize(dtrain, config)
+    dvalidation = tfresize(dvalidation, config)
+    dtest = tfresize(dtest, config)
+
+    dtrain=dtrain.prefetch(1)
+
+    #repeat step loops generator within epoch
+    #from https://stackoverflow.com/questions/55421290/tensorflow-2-0-keras-how-to-write-image-summaries-for-tensorboard/55754700#55754700
+    #does not seem to work as intended
+    #dtrain = dtrain.repeat(config['nepochs'])
 
   return dtrain, dvalidation, dtest, dsinfo
 
 
-def batchcheck(dtrain, dvalidation, dtest, batchlen):
+def batchcheck(dtrain, dvalidation, dtest, batchsize):
+  """
+  prints diams of first batch
+  """
   #extract tensor elements
   #   iter converts to iterable object
   #   next extracts element from each
@@ -95,7 +163,7 @@ def batchcheck(dtrain, dvalidation, dtest, batchlen):
   #should correspond to batch size
   print("labelshape:",vlabels.shape)
   print("imgshape:",timg.shape)
-  print("batch size:",batchlen)
+  print("batch size:",batchsize)
 
   return timg, tlabels, vimg, vlabels, testimg, testlabels
 

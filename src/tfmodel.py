@@ -10,79 +10,33 @@ import tensorflow_datasets as tfds
 from tensorflow import keras
 from keras import Sequential 
 
+# for tensorflow keras
+from classification_models.tfkeras import Classifiers
+
 import src.utils as utils
 
 
-def build(config):
-    #we are overfitting pretty heavily, try regularisation
-    l2reg=tf.keras.regularizers.L2(config['lamda'])
-    #kernel_regularizer=l2reg
-    #not great, slow and not a big improvement, leave it out for now
-
-
-    """
-    MODEL HERE
-
-    convolution layer (Nfilters,Npx,...)
-        basically a set of N filters acting on a window of MxM px slid across whole image
-        output shape x,y,Nfilters
-    
-    max pooling layer (Npx)
-        sliding Npx x Npx window
-        outputs max value within window
-        effectively downsamples image retaining max
-        https://www.youtube.com/watch?v=ZjM_XQa5s6s
-
-    use relu function instead of signmoid for all but output layer
-    basically max(0,val)
-    = passthrough if above 0
-        more responsive across entire range compared to sigmoid
-
-    """
-
-    #Initialise basic TF model
-    """
-    Simpler, faster model for testing, still gets 0.7-0.75 most of the time
-
+def buildsimple():
     model = Sequential(
-        [
-            keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
-            keras.layers.MaxPooling2D(2, name="block1_pool"),
-            keras.layers.Conv2D(32,3, padding='same', activation='relu', name="block2_conv1"),
-            keras.layers.MaxPooling2D(2, name="block2_pool"),
-            keras.layers.Conv2D(16,3, padding='same', activation='relu', name="block3_conv1"),
-            keras.layers.MaxPooling2D(2, name="block3_pool"),
-            keras.layers.Flatten(),
-            keras.layers.Dense(256, activation='relu', name="dense1"),
-            keras.layers.Dense(128, activation='relu', name="dense2"),
-            keras.layers.Dense(56, activation='relu', name="dense3"),
-            keras.layers.Dense(12, activation='relu', name="dense4"), 
-            keras.layers.Dense(1, activation='sigmoid', name="predictions") 
-        ], name = "my_model" 
+    [
+        keras.layers.Conv2D(64,3, padding='same', activation='relu', input_shape=[96, 96, 3], name="block1_conv1"),
+        keras.layers.MaxPooling2D(2, name="block1_pool"),
+        keras.layers.Conv2D(32,3, padding='same', activation='relu', name="block2_conv1"),
+        keras.layers.MaxPooling2D(2, name="block2_pool"),
+        keras.layers.Conv2D(16,3, padding='same', activation='relu', name="block3_conv1"),
+        keras.layers.MaxPooling2D(2, name="block3_pool"),
+        keras.layers.Flatten(),
+        keras.layers.Dense(256, activation='relu', name="dense1"),
+        keras.layers.Dense(128, activation='relu', name="dense2"),
+        keras.layers.Dense(56, activation='relu', name="dense3"),
+        keras.layers.Dense(12, activation='relu', name="dense4"), 
+        keras.layers.Dense(1, activation='sigmoid', name="predictions") 
+    ], name = "my_model" 
     )   
-    
+    return model
 
-    
-    #gets ~0.75 fairly consistently - slow, large
-    model = Sequential(
-        [
-            keras.layers.Conv2D(256,3, padding='same', activation='relu', input_shape=[96, 96, 3]),
-            keras.layers.MaxPooling2D(2),
-            keras.layers.Conv2D(1024,3, padding='same', activation='relu'),
-            keras.layers.MaxPooling2D(2),
-            keras.layers.Conv2D(256,3, padding='same', activation='relu'),
-            keras.layers.MaxPooling2D(2),
-            keras.layers.Flatten(),
-            keras.layers.Dense(256, activation='relu'),
-            keras.layers.Dense(128, activation='relu'),
-            keras.layers.Dense(56, activation='relu'),
-            keras.layers.Dense(12, activation='relu'), 
-            keras.layers.Dense(1, activation='sigmoid') 
-        ], name = "my_model" 
-    )   
-    """
 
-    
+def buildown():
 
     model = Sequential(
         [
@@ -115,22 +69,124 @@ def build(config):
             keras.layers.Dense(1, activation = 'sigmoid', name="output"),
         ], name = "model3" 
     )  
-    
+    return model
 
-    #view model summary
-    model.summary()
 
-    #compile the model
-    #   acc = track accuracy vs train/val sets
-    model.compile(
-        loss=tf.keras.losses.BinaryCrossentropy(),
-        optimizer=tf.keras.optimizers.Adam(0.0005),
-        metrics=['acc'],
-    )
+def buildresnet(config):
+    #https://www.kaggle.com/code/skloveyyp/keras-resnet50/notebook
+
+    base_model = keras.applications.resnet50.ResNet50(
+            weights='imagenet',  # Load weights pre-trained on ImageNet.
+            input_shape=(config['sizetarget'], config['sizetarget'], 3),
+            include_top=False
+    )  # Do not include the ImageNet classifier at the top.
+
+    #https://stackoverflow.com/questions/66679241/import-resnext-into-keras
+    #resnext50 in keras
+    #ResNeXt50, preprocess_input = Classifiers.get('resnext50')
+    #base_model = ResNeXt50(include_top = False, input_shape=(96, 96, 3), weights='imagenet')
+
+    model = Sequential(
+        [
+            base_model,
+            keras.layers.Flatten(),
+            keras.layers.Dense(256, use_bias=False, name="tail_dense1"),
+            keras.layers.BatchNormalization(),
+            keras.layers.Activation("relu"),
+            keras.layers.Dropout(0.5),
+            keras.layers.Dense(1, activation = 'sigmoid', name="output"),
+        ], name = "model3" 
+    )  
+
+    base_model.Trainable=True
+
+    set_trainable=False
+    for layer in base_model.layers:
+        if layer.name == 'res5a_branch2a':
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
 
     return model
 
-def train(model, dtrain, dval, config, checkpoint_path):
+
+def buildenet(config):
+    #https://keras.io/api/applications/efficientnet/
+    #https://www.kaggle.com/code/taylorkern/tk-efficientnet
+
+    base_model = tf.keras.applications.EfficientNetB0(
+        include_top=False,
+        weights="imagenet",
+        input_shape=(96, 96, 3),
+    )
+
+    model = Sequential(
+        [
+            base_model,
+            keras.layers.Flatten(),
+            keras.layers.Dense(64, activation='relu'),
+            keras.layers.Dropout(0.5),
+            keras.layers.Dense(32, activation='relu'),
+            keras.layers.Dropout(0.5),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(2, activation='softmax')
+        ], name = "model3" 
+    ) 
+
+    return model
+
+def build(config):
+
+
+    if config['premodel'] == "resnet":
+
+        model = buildresnet(config)
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+    elif config['premodel'] == "efficientnet":
+
+        model = buildenet(config)
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+    elif config['premodel'] == "simple":
+        model = buildsimple()
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+    else:
+        model = buildown()
+
+        model.summary()
+
+        model.compile(
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(config['learnrate']),
+            metrics=['acc'],
+        )
+
+    return model
+
+def train(model, dtrain, dval, config, checkpoint_path, odir):
+
 
     #Callbacks
     #   (special utilities executed during training)
@@ -140,6 +196,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
     #https://towardsdatascience.com/a-practical-introduction-to-early-stopping-in-machine-learning-550ac88bc8fd
     stopcond=keras.callbacks.EarlyStopping(monitor='val_loss', patience=config['stoplim'])
 
+    reduce = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', patience=1, verbose=1, factor=0.1)
 
     #save model during training every 5 batches
     # save best model only based on val_loss
@@ -173,7 +230,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
             epochs=config['nepochs'],
             validation_data = dval,
             validation_freq = 1,
-            callbacks=[stopcond,cp_callback],
+            callbacks=[stopcond,reduce,cp_callback],
             verbose=1
         )
 
@@ -207,6 +264,7 @@ def train(model, dtrain, dval, config, checkpoint_path):
             ax[1].legend()
 
             plt.show()
+            plt.savefig(os.path.join(odir, f'fitresults.png'), dpi=300)
         else: #if not training
             #load from checkpoint variable
             model.load_weights(config['cptoload'])

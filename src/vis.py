@@ -13,7 +13,7 @@ def preplot(config, timg, tlabels):
         fig.tight_layout(pad=0.1)
 
         for i,ax in enumerate(ax.flat):
-            rand = np.random.randint(config['batchlen'])    
+            rand = np.random.randint(config['batchsize'])    
             ax.imshow(timg[rand,:,:,:])
             ax.set_title(bool(tlabels.numpy()[rand]))
             ax.set_axis_off()
@@ -36,7 +36,7 @@ def layerplot(config, model, timg, tlabels, odir):
                                 outputs=[layer.output for layer in model.layers])
 
         #pick a random image
-        rand = np.random.randint(config['batchlen'])   
+        rand = np.random.randint(config['batchsize'])   
         img=timg[rand,:,:,:]
 
         # expand dimensions so that it represents a single 'sample'
@@ -52,7 +52,7 @@ def layerplot(config, model, timg, tlabels, odir):
 
         #plot original as RGB, including label as true/false 
         ax["A"].imshow(img)
-        ax["A"].set_title(bool(tlabels.numpy()[rand]))
+        ax["A"].set_title(bool(tlabels.numpy()[rand]))      #should include both expected and predicted
         ax["A"].set_axis_off()
 
         #iterate through layers, plotting first 16 filter outputs for each
